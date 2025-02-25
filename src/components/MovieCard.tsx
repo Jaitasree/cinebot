@@ -19,28 +19,28 @@ export const MovieCard = ({
   className,
 }: MovieCardProps) => {
   return (
-    <div className={cn("movie-card", className)}>
+    <div className={cn("movie-card aspect-[2/3]", className)}>
       <img
         src={imageUrl}
         alt={title}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover rounded-md"
         loading="lazy"
       />
-      <div className="movie-card-overlay" />
+      <div className="movie-card-overlay rounded-md" />
       <div className="movie-card-content">
         <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 text-yellow-400" />
+            <Star className="w-4 h-4 text-[#E50914]" />
             <span className="text-sm text-white/90">{rating}</span>
             <span className="text-sm text-white/60">{year}</span>
           </div>
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20"
+            className="h-8 w-8 rounded-full bg-[#E50914] hover:bg-[#B81D24] border-none"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 text-white" />
           </Button>
         </div>
       </div>
