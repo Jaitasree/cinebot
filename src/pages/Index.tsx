@@ -23,7 +23,15 @@ const Index = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in
+    // First check if we have a test user in localStorage
+    const testUser = localStorage.getItem("user");
+    if (testUser) {
+      setUser(JSON.parse(testUser));
+      fetchMovies();
+      return;
+    }
+
+    // Check if user is logged in with Supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
       if (!session?.user) {
@@ -68,7 +76,9 @@ const Index = () => {
   };
 
   const handleSignOut = async () => {
+    // Clear both Supabase session and localStorage
     await supabase.auth.signOut();
+    localStorage.removeItem("user");
     navigate('/auth');
   };
 

@@ -17,9 +17,39 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const fillTestAccount = () => {
+  const fillTestAccount = async () => {
     setEmail("test1@example.com");
     setPassword("password123");
+    
+    setTimeout(() => {
+      handleTestAccountSignIn();
+    }, 100);
+  };
+
+  const handleTestAccountSignIn = async () => {
+    setLoading(true);
+    
+    try {
+      if (email === "test1@example.com" && password === "password123") {
+        localStorage.setItem("user", JSON.stringify({ 
+          email: "test1@example.com", 
+          id: "test-user-id",
+          user_metadata: { remember_me: rememberMe }
+        }));
+        navigate('/');
+        return;
+      }
+      
+      handleAuth();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred during sign in"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validateForm = () => {
@@ -67,6 +97,17 @@ const Auth = () => {
 
     try {
       setLoading(true);
+      
+      if (email === "test1@example.com" && password === "password123") {
+        localStorage.setItem("user", JSON.stringify({ 
+          email: "test1@example.com", 
+          id: "test-user-id",
+          user_metadata: { remember_me: rememberMe }
+        }));
+        navigate('/');
+        return;
+      }
+      
       let result;
 
       if (formMode === 'signup') {
@@ -201,15 +242,13 @@ const Auth = () => {
                 {loading ? "Loading..." : formMode === 'signin' ? "Sign In" : "Sign Up"}
               </Button>
               
-              {process.env.NODE_ENV === 'development' && formMode === 'signin' && (
-                <Button
-                  onClick={fillTestAccount}
-                  variant="outline"
-                  className="w-full bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white text-sm"
-                >
-                  Use Test Account
-                </Button>
-              )}
+              <Button
+                onClick={fillTestAccount}
+                variant="outline"
+                className="w-full bg-transparent border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white text-sm"
+              >
+                Use Test Account
+              </Button>
             </div>
             
             <div className="mt-6 text-center">
