@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Prefill test account on development
   const fillTestAccount = () => {
     setEmail("test1@example.com");
     setPassword("password123");
@@ -84,12 +82,7 @@ const Auth = () => {
       } else {
         result = await supabase.auth.signInWithPassword({
           email,
-          password,
-          options: {
-            data: {
-              remember_me: rememberMe
-            }
-          }
+          password
         });
       }
 
