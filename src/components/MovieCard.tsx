@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { syncWatchlist } from "@/services/movieService";
 
 interface MovieCardProps {
   title: string;
@@ -32,7 +33,7 @@ export const MovieCard = ({
     setIsInWatchlist(inWatchlist);
   }, [inWatchlist]);
 
-  const handleWatchlistToggle = (e: React.MouseEvent) => {
+  const handleWatchlistToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const newWatchlistState = !isInWatchlist;
     setIsInWatchlist(newWatchlistState);
@@ -65,6 +66,14 @@ export const MovieCard = ({
     
     // Update localStorage
     localStorage.setItem("watchlist", JSON.stringify(updatedWatchlist));
+    
+    // Sync with Supabase
+    try {
+      await syncWatchlist(updatedWatchlist);
+    } catch (error) {
+      console.error("Failed to sync watchlist with Supabase:", error);
+      // Continue with local updates even if server sync fails
+    }
     
     // Dispatch a custom event to notify other components
     window.dispatchEvent(new Event('watchlistUpdated'));

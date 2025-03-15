@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
@@ -6,18 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Loader2 } from "lucide-react";
+import { Movie } from "@/types/movie";
+import { fetchMovies, addMoviesToSupabase, fetchWatchlist } from "@/services/movieService";
 
-interface Movie {
-  id: string;
-  title: string;
-  image_url: string;
-  year: string;
-  description: string;
-  rating: number;
-}
-
-// Add a list of additional movies with ratings according to Google
+// Extended movie list with 50 movies from the IMDb Top 250
 const additionalMovies: Movie[] = [
   {
     id: "movie-1001",
@@ -178,6 +170,166 @@ const additionalMovies: Movie[] = [
     year: "2019",
     description: "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
     rating: 8.5
+  },
+  {
+    id: "movie-1021",
+    title: "One Flew Over the Cuckoo's Nest",
+    image_url: "https://m.media-amazon.com/images/M/MV5BZjA0OWVhOTAtYWQxNi00YzNhLWI4ZjYtNjFjZTEyYjJlNDVlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_.jpg",
+    year: "1975",
+    description: "A criminal pleads insanity and is admitted to a mental institution, where he rebels against the oppressive nurse and rallies up the scared patients.",
+    rating: 8.7
+  },
+  {
+    id: "movie-1022",
+    title: "Saving Private Ryan",
+    image_url: "https://m.media-amazon.com/images/M/MV5BZjhkMDM4MWItZTVjOC00ZDRhLThmYTAtM2I5NzBmNmNlMzI1XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_.jpg",
+    year: "1998",
+    description: "Following the Normandy Landings, a group of U.S. soldiers go behind enemy lines to retrieve a paratrooper whose brothers have been killed in action.",
+    rating: 8.6
+  },
+  {
+    id: "movie-1023",
+    title: "Spirited Away",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWE5ZWItZDBhYWQ0NTcxNWRhXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+    year: "2001",
+    description: "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, and where humans are changed into beasts.",
+    rating: 8.6
+  },
+  {
+    id: "movie-1024",
+    title: "Back to the Future",
+    image_url: "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_.jpg",
+    year: "1985",
+    description: "Marty McFly, a 17-year-old high school student, is accidentally sent thirty years into the past in a time-traveling DeLorean invented by his close friend, the eccentric scientist Doc Brown.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1025",
+    title: "Psycho",
+    image_url: "https://m.media-amazon.com/images/M/MV5BNTQwNDM1YzItNDAxZC00NWY2LTk0M2UtNDIwNWI5OGUyNWUxXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    year: "1960",
+    description: "A Phoenix secretary embezzles $40,000 from her employer's client, goes on the run, and checks into a remote motel run by a young man under the domination of his mother.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1026",
+    title: "Gladiator",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODEtN2U3NzIxMGVkZTA1L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    year: "2000",
+    description: "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1027",
+    title: "The Lion King",
+    image_url: "https://m.media-amazon.com/images/M/MV5BYTYxNGMyZTYtMjE3MS00MzNjLWFjNmYtMDk3N2FmM2JiM2M1XkEyXkFqcGdeQXVyNjY5NDU4NzI@._V1_.jpg",
+    year: "1994",
+    description: "Lion prince Simba and his father are targeted by his bitter uncle, who wants to ascend the throne himself.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1028",
+    title: "The Pianist",
+    image_url: "https://m.media-amazon.com/images/M/MV5BOWRiZDIxZjktMTA1NC00MDQ2LWEzMjUtMTliZmY3NjQ3ODJiXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    year: "2002",
+    description: "A Polish Jewish musician struggles to survive the destruction of the Warsaw ghetto of World War II.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1029",
+    title: "The Intouchables",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMTYxNDA3MDQwNl5BMl5BanBnXkFtZTcwNTU4Mzc1Nw@@._V1_.jpg",
+    year: "2011",
+    description: "After he becomes a quadriplegic from a paragliding accident, an aristocrat hires a young man from the projects to be his caregiver.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1030",
+    title: "Modern Times",
+    image_url: "https://m.media-amazon.com/images/M/MV5BYjJiZjMzYzktNjU0NS00OTkxLWEwYzItYzdhYWJjN2QzMTRlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    year: "1936",
+    description: "The Tramp struggles to live in modern industrial society with the help of a young homeless woman.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1031",
+    title: "City Lights",
+    image_url: "https://m.media-amazon.com/images/M/MV5BY2I4MmM1N2EtM2YzOS00OWUzLTkzYzctNDc5NDg2N2IyODJmXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    year: "1931",
+    description: "With the aid of a wealthy erratic tippler, a dewy-eyed tramp who has fallen in love with a sightless flower girl accumulates money to be able to help her medically.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1032",
+    title: "Alien",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMmQ2MmU3NzktZjAxOC00ZDZhLTk4YzEtMDMyMzcxY2IwMDAyXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    year: "1979",
+    description: "After a space merchant vessel receives an unknown transmission as a distress call, one of the crew is attacked by a mysterious life form and they soon realize that its life cycle has merely begun.",
+    rating: 8.5
+  },
+  {
+    id: "movie-1033",
+    title: "Apocalypse Now",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMDdhODg0MjYtYzBiOS00ZmI5LWEwZGYtZDEyNDU4MmQyNzFkXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    year: "1979",
+    description: "A U.S. Army officer serving in Vietnam is tasked with assassinating a renegade Special Forces Colonel who sees himself as a god.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1034",
+    title: "Memento",
+    image_url: "https://m.media-amazon.com/images/M/MV5BZTcyNjk1MjgtOWI3Mi00YzQwLWI5MTktMzY4ZmI2NDAyNzYzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    year: "2000",
+    description: "A man with short-term memory loss attempts to track down his wife's murderer.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1035",
+    title: "Django Unchained",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjIyNTQ5NjQ1OV5BMl5BanBnXkFtZTcwODg1MDU4OA@@._V1_.jpg",
+    year: "2012",
+    description: "With the help of a German bounty-hunter, a freed slave sets out to rescue his wife from a brutal plantation-owner in Mississippi.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1036",
+    title: "Raiders of the Lost Ark",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjA0ODEzMTc1Nl5BMl5BanBnXkFtZTcwODM2MjAxNA@@._V1_.jpg",
+    year: "1981",
+    description: "In 1936, archaeologist and adventurer Indiana Jones is hired by the U.S. government to find the Ark of the Covenant before Adolf Hitler's Nazis can obtain its awesome powers.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1037",
+    title: "WALL·E",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjExMTg5OTU0NF5BMl5BanBnXkFtZTcwMjMxMzMzMw@@._V1_.jpg",
+    year: "2008",
+    description: "In the distant future, a small waste-collecting robot inadvertently embarks on a space journey that will ultimately decide the fate of mankind.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1038",
+    title: "The Lives of Others",
+    image_url: "https://m.media-amazon.com/images/M/MV5BOTNmZjA2ZmQtYWU1Yy00ZmVlLTg2NmItM2JlNzU5ZTBiNzM4XkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+    year: "2006",
+    description: "In 1984 East Berlin, an agent of the secret police, conducting surveillance on a writer and his lover, finds himself becoming increasingly absorbed by their lives.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1039",
+    title: "Sunset Blvd.",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMTU0NTkyNzYwMF5BMl5BanBnXkFtZTgwMDU0NDk5MTI@._V1_.jpg",
+    year: "1950",
+    description: "A screenwriter develops a dangerous relationship with a faded film star determined to make a triumphant return.",
+    rating: 8.4
+  },
+  {
+    id: "movie-1040",
+    title: "Paths of Glory",
+    image_url: "https://m.media-amazon.com/images/M/MV5BOTI5Nzc0OTMtYzBkMS00NjkxLThmM2UtNjM2ODgxN2M5NjNkXkEyXkFqcGdeQXVyNjQ2MjQ5NzM@._V1_.jpg",
+    year: "1957",
+    description: "After refusing to attack an enemy position, a general accuses the soldiers of cowardice and their commanding officer must defend them.",
+    rating: 8.4
   }
 ];
 
@@ -185,38 +337,95 @@ const Index = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncingMovies, setSyncingMovies] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
 
+  // Initial setup - check authentication and load data
   useEffect(() => {
-    // First check if we have a test user in localStorage
-    const testUser = localStorage.getItem("user");
-    if (testUser) {
-      setUser(JSON.parse(testUser));
-      
-      // Get watchlist from localStorage before fetching movies
-      const savedWatchlist = localStorage.getItem("watchlist");
-      if (savedWatchlist) {
-        setWatchlist(JSON.parse(savedWatchlist));
-      } else {
-        // Initialize empty watchlist if none exists
-        localStorage.setItem("watchlist", JSON.stringify([]));
+    const initApp = async () => {
+      // First check if we have a test user in localStorage
+      const testUser = localStorage.getItem("user");
+      if (testUser) {
+        setUser(JSON.parse(testUser));
+        await loadInitialData();
+        return;
       }
-      
-      fetchMovies();
-      return;
-    }
 
-    // Check if user is logged in with Supabase
-    supabase.auth.getSession().then(({ data: { session } }) => {
+      // Check if user is logged in with Supabase
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
+      
       if (!session?.user) {
         navigate('/auth');
       } else {
-        // Get watchlist from localStorage
+        await loadInitialData();
+      }
+    };
+
+    // Setup auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+      if (!session?.user) {
+        navigate('/auth');
+      }
+    });
+
+    initApp();
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to load movies from Supabase first
+      let moviesData: Movie[] = [];
+      try {
+        moviesData = await fetchMovies();
+      } catch (error) {
+        console.error("Error fetching movies from Supabase:", error);
+      }
+      
+      // If no movies in Supabase yet, sync the additional movies
+      if (moviesData.length === 0) {
+        setSyncingMovies(true);
+        toast({
+          title: "First time setup",
+          description: "Adding movies to database...",
+        });
+        
+        try {
+          await addMoviesToSupabase(additionalMovies);
+          moviesData = additionalMovies;
+        } catch (error) {
+          console.error("Error adding movies to Supabase:", error);
+          // Fallback to local data
+          moviesData = additionalMovies;
+        } finally {
+          setSyncingMovies(false);
+        }
+      }
+      
+      setMovies(moviesData);
+      setFilteredMovies(moviesData);
+      
+      // Get watchlist from Supabase
+      try {
+        const watchlistIds = await fetchWatchlist();
+        setWatchlist(watchlistIds);
+        
+        // Update localStorage to keep it in sync
+        localStorage.setItem("watchlist", JSON.stringify(watchlistIds));
+      } catch (error) {
+        console.error("Error fetching watchlist from Supabase:", error);
+        
+        // Fallback to localStorage
         const savedWatchlist = localStorage.getItem("watchlist");
         if (savedWatchlist) {
           setWatchlist(JSON.parse(savedWatchlist));
@@ -225,37 +434,11 @@ const Index = () => {
           localStorage.setItem("watchlist", JSON.stringify([]));
         }
       }
-    });
-
-    // Setup auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (!session?.user) {
-        navigate('/auth');
-      }
-    });
-
-    // Fetch movies
-    fetchMovies();
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const fetchMovies = async () => {
-    try {
-      setLoading(true);
-      
-      // Use only additional movies to avoid duplicates
-      // We're removing the Supabase fetch to eliminate old or duplicate movies
-      setMovies(additionalMovies);
-      setFilteredMovies(additionalMovies);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch movies"
+        description: "Failed to load data"
       });
     } finally {
       setLoading(false);
@@ -266,6 +449,7 @@ const Index = () => {
     // Clear both Supabase session and localStorage
     await supabase.auth.signOut();
     localStorage.removeItem("user");
+    localStorage.removeItem("watchlist");
     navigate('/auth');
   };
 
@@ -364,42 +548,4 @@ const Index = () => {
 
         {/* Featured Section */}
         <section>
-          <h2 className="text-2xl font-semibold text-white mb-6">
-            {showWatchlist ? "My Watchlist" : "Featured Movies"}
-          </h2>
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, index) => (
-                <div key={index} className="aspect-[2/3] bg-gray-800 animate-pulse rounded-md" />
-              ))}
-            </div>
-          ) : filteredMovies.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredMovies.map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  id={movie.id}
-                  title={movie.title}
-                  imageUrl={movie.image_url}
-                  rating={movie.rating}
-                  year={movie.year}
-                  inWatchlist={watchlist.includes(movie.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-400">
-                {showWatchlist 
-                  ? "Your watchlist is empty. Add some movies to watch later!" 
-                  : "No movies found. Please try a different search term."}
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-};
-
-export default Index;
+          <h2 className="text-2xl font-
