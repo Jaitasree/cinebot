@@ -2,7 +2,7 @@
 import { Star, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface MovieCardProps {
@@ -27,41 +27,59 @@ export const MovieCard = ({
   const [isInWatchlist, setIsInWatchlist] = useState(inWatchlist);
   const { toast } = useToast();
 
+  // Sync the internal state with the prop when it changes
+  useEffect(() => {
+    setIsInWatchlist(inWatchlist);
+  }, [inWatchlist]);
+
   const handleWatchlistToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsInWatchlist(!isInWatchlist);
+    const newWatchlistState = !isInWatchlist;
+    setIsInWatchlist(newWatchlistState);
     
     // Get existing watchlist from localStorage
     const existingWatchlist = JSON.parse(localStorage.getItem("watchlist") || "[]");
+    let updatedWatchlist;
     
-    if (!isInWatchlist) {
-      // Add to watchlist
-      localStorage.setItem("watchlist", JSON.stringify([...existingWatchlist, id]));
+    if (newWatchlistState) {
+      // Add to watchlist if not already present
+      if (!existingWatchlist.includes(id)) {
+        updatedWatchlist = [...existingWatchlist, id];
+      } else {
+        updatedWatchlist = existingWatchlist;
+      }
+      
       toast({
         title: "Added to Watchlist",
         description: `${title} has been added to your watchlist`,
       });
     } else {
       // Remove from watchlist
-      const updatedWatchlist = existingWatchlist.filter((movieId: string) => movieId !== id);
-      localStorage.setItem("watchlist", JSON.stringify(updatedWatchlist));
+      updatedWatchlist = existingWatchlist.filter((movieId: string) => movieId !== id);
+      
       toast({
         title: "Removed from Watchlist",
         description: `${title} has been removed from your watchlist`,
       });
     }
+    
+    // Update localStorage
+    localStorage.setItem("watchlist", JSON.stringify(updatedWatchlist));
+    
+    // Dispatch a custom event to notify other components
+    window.dispatchEvent(new Event('watchlistUpdated'));
   };
 
   return (
-    <div className={cn("movie-card aspect-[2/3]", className)}>
+    <div className={cn("movie-card aspect-[2/3] relative group cursor-pointer overflow-hidden rounded-md", className)}>
       <img
         src={imageUrl}
         alt={title}
-        className="w-full h-full object-cover rounded-md"
+        className="w-full h-full object-cover rounded-md transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
       />
-      <div className="movie-card-overlay rounded-md" />
-      <div className="movie-card-content">
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md" />
+      <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
         <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

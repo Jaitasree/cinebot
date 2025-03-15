@@ -196,6 +196,16 @@ const Index = () => {
     const testUser = localStorage.getItem("user");
     if (testUser) {
       setUser(JSON.parse(testUser));
+      
+      // Get watchlist from localStorage before fetching movies
+      const savedWatchlist = localStorage.getItem("watchlist");
+      if (savedWatchlist) {
+        setWatchlist(JSON.parse(savedWatchlist));
+      } else {
+        // Initialize empty watchlist if none exists
+        localStorage.setItem("watchlist", JSON.stringify([]));
+      }
+      
       fetchMovies();
       return;
     }
@@ -205,6 +215,15 @@ const Index = () => {
       setUser(session?.user || null);
       if (!session?.user) {
         navigate('/auth');
+      } else {
+        // Get watchlist from localStorage
+        const savedWatchlist = localStorage.getItem("watchlist");
+        if (savedWatchlist) {
+          setWatchlist(JSON.parse(savedWatchlist));
+        } else {
+          // Initialize empty watchlist if none exists
+          localStorage.setItem("watchlist", JSON.stringify([]));
+        }
       }
     });
 
@@ -218,12 +237,6 @@ const Index = () => {
       }
     });
 
-    // Get watchlist from localStorage
-    const savedWatchlist = localStorage.getItem("watchlist");
-    if (savedWatchlist) {
-      setWatchlist(JSON.parse(savedWatchlist));
-    }
-
     // Fetch movies
     fetchMovies();
 
@@ -234,19 +247,10 @@ const Index = () => {
     try {
       setLoading(true);
       
-      // Get movies from Supabase
-      const { data, error } = await supabase
-        .from('movies')
-        .select('*')
-        .order('title');
-      
-      if (error) throw error;
-      
-      // Combine with additional movies
-      const allMovies = [...(data || []), ...additionalMovies];
-      
-      setMovies(allMovies);
-      setFilteredMovies(allMovies);
+      // Use only additional movies to avoid duplicates
+      // We're removing the Supabase fetch to eliminate old or duplicate movies
+      setMovies(additionalMovies);
+      setFilteredMovies(additionalMovies);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -281,8 +285,8 @@ const Index = () => {
     setShowWatchlist(!showWatchlist);
   };
 
+  // Update useEffect to properly filter watchlist movies
   useEffect(() => {
-    // Filter movies for watchlist view
     if (showWatchlist) {
       const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
       setFilteredMovies(watchlistMovies);
@@ -293,7 +297,17 @@ const Index = () => {
 
   // Effect to update watchlist state when localStorage changes
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "watchlist") {
+        const savedWatchlist = localStorage.getItem("watchlist");
+        if (savedWatchlist) {
+          setWatchlist(JSON.parse(savedWatchlist));
+        }
+      }
+    };
+
+    // Handle when watchlist changes in this tab
+    const handleLocalStorageChange = () => {
       const savedWatchlist = localStorage.getItem("watchlist");
       if (savedWatchlist) {
         setWatchlist(JSON.parse(savedWatchlist));
@@ -301,7 +315,14 @@ const Index = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    
+    // Add a custom event listener for changes in the same window
+    window.addEventListener('watchlistUpdated', handleLocalStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('watchlistUpdated', handleLocalStorageChange);
+    };
   }, []);
 
   if (!user) return null;
