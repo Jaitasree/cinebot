@@ -104,6 +104,11 @@ const Auth = () => {
           id: "test-user-id",
           user_metadata: { remember_me: rememberMe }
         }));
+        
+        if (!localStorage.getItem("watchlist")) {
+          localStorage.setItem("watchlist", JSON.stringify([]));
+        }
+        
         navigate('/');
         return;
       }
@@ -138,6 +143,10 @@ const Auth = () => {
         });
         setFormMode('signin');
       } else {
+        if (!localStorage.getItem("watchlist")) {
+          localStorage.setItem("watchlist", JSON.stringify([]));
+        }
+        
         navigate('/');
       }
     } catch (error: any) {
