@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 interface MovieCardProps {
   title: string;
   imageUrl: string;
-  rating: number;
+  rating: number | null;
   year: string;
   id: string;
   className?: string;
@@ -18,7 +18,7 @@ interface MovieCardProps {
 export const MovieCard = ({
   title,
   imageUrl,
-  rating,
+  rating = 0,
   year,
   id,
   className,
@@ -66,7 +66,7 @@ export const MovieCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-white/90">{rating.toFixed(1)}</span>
+            <span className="text-sm text-white/90">{rating ? rating.toFixed(1) : "N/A"}</span>
             <span className="text-sm text-white/60">{year}</span>
           </div>
           <Button
