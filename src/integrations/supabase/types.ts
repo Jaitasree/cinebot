@@ -15,6 +15,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string
+          rating: number | null
           title: string
           year: string
         }
@@ -23,6 +24,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url: string
+          rating?: number | null
           title: string
           year: string
         }
@@ -31,6 +33,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string
+          rating?: number | null
           title?: string
           year?: string
         }
@@ -92,6 +95,35 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlist: {
+        Row: {
+          created_at: string
+          id: string
+          movie_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          movie_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          movie_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_movie_id_fkey"
+            columns: ["movie_id"]
+            isOneToOne: false
+            referencedRelation: "movies"
             referencedColumns: ["id"]
           },
         ]

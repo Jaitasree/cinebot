@@ -58,14 +58,14 @@ export async function syncWatchlist(movieIds: string[]): Promise<void> {
   }
   
   // Insert new watchlist entries
+  if (movieIds.length === 0) {
+    return; // No entries to add
+  }
+  
   const watchlistEntries = movieIds.map(movieId => ({
     user_id: user.id,
     movie_id: movieId,
   }));
-  
-  if (watchlistEntries.length === 0) {
-    return; // No entries to add
-  }
   
   const { error: insertError } = await supabase
     .from('watchlist')

@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
@@ -549,41 +548,4 @@ const Index = () => {
 
         {/* Featured Section */}
         <section>
-          <h2 className="text-2xl font-bold text-white mb-6">Featured Movies</h2>
-          
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 text-white animate-spin" />
-            </div>
-          ) : filteredMovies.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {filteredMovies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-white text-xl">
-                {showWatchlist 
-                  ? "Your watchlist is empty" 
-                  : "No movies match your search"}
-              </p>
-            </div>
-          )}
-        </section>
-        
-        {/* Loading indicator for first-time movie sync */}
-        {syncingMovies && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-8 rounded-xl flex flex-col items-center">
-              <Loader2 className="h-12 w-12 text-[#E50914] animate-spin mb-4" />
-              <p className="text-white text-lg">Setting up your movie database...</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default Index;
+          <h2 className="text-2
