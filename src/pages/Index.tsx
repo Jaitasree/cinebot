@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
@@ -548,4 +549,53 @@ const Index = () => {
 
         {/* Featured Section */}
         <section>
-          <h2 className="text-2
+          <h2 className="text-2xl font-bold text-white mb-6">
+            {showWatchlist ? "My Watchlist" : "Featured Movies"}
+          </h2>
+          
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            </div>
+          ) : (
+            <>
+              {filteredMovies.length === 0 ? (
+                <div className="text-center py-16 text-white/70">
+                  {showWatchlist 
+                    ? "Your watchlist is empty. Add some movies to watch later!"
+                    : "No movies found matching your search."}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {filteredMovies.map((movie) => (
+                    <MovieCard 
+                      key={movie.id}
+                      movie={movie}
+                      inWatchlist={watchlist.includes(movie.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {syncingMovies && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+              <div className="bg-[#1a1a1a] p-6 rounded-lg shadow-xl max-w-md w-full">
+                <div className="flex items-center justify-center mb-4">
+                  <Loader2 className="w-8 h-8 text-[#E50914] animate-spin mr-3" />
+                  <h3 className="text-xl font-semibold text-white">Syncing Movie Database</h3>
+                </div>
+                <p className="text-white/70 text-sm text-center">
+                  Please wait while we set up your movie database. This may take a moment...
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
