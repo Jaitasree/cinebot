@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
@@ -8,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark, Loader2 } from "lucide-react";
 import { Movie } from "@/types/movie";
-import { fetchMovies, addMoviesToSupabase, fetchWatchlist } from "@/services/movieService";
+import { fetchMovies, addMoviesToSupabase, fetchWatchlist, fetchMoreMovies } from "@/services/movieService";
 
-// Extended movie list with 50 movies from the IMDb Top 250
 const additionalMovies: Movie[] = [
   {
     id: "movie-1001",
@@ -63,7 +61,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1007",
     title: "The Lord of the Rings: The Return of the King",
-    image_url: "https://m.media-amazon.com/images/M/MV5BNzA5ZDNlZWMtM2NhNS00NDJjLTk4NDItYTRmY2EwMWZlMTY3XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BNzA5ZDNlZWMtM2NhNS00NDJjLTk4NDItYTRmY2EwMWZlMTY3XkEyXkFqcGdeQXVyNjkwMjQ5NzM@._V1_.jpg",
     year: "2003",
     description: "Gandalf and Aragorn lead the World of Men against Sauron's army to draw his gaze from Frodo and Sam as they approach Mount Doom with the One Ring.",
     rating: 8.9
@@ -119,7 +117,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1014",
     title: "Interstellar",
-    image_url: "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWEzMjUtY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
     year: "2014",
     description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
     rating: 8.6
@@ -215,7 +213,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1026",
     title: "Gladiator",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODEtN2U3NzIxMGVkZTA1L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODEtN2U3NzIxMGVkZTA1L2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "2000",
     description: "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
     rating: 8.5
@@ -345,10 +343,8 @@ const Index = () => {
   const { toast } = useToast();
   const [user, setUser] = useState(null);
 
-  // Initial setup - check authentication and load data
   useEffect(() => {
     const initApp = async () => {
-      // First check if we have a test user in localStorage
       const testUser = localStorage.getItem("user");
       if (testUser) {
         setUser(JSON.parse(testUser));
@@ -356,7 +352,6 @@ const Index = () => {
         return;
       }
 
-      // Check if user is logged in with Supabase
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
       
@@ -367,7 +362,6 @@ const Index = () => {
       }
     };
 
-    // Setup auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -385,7 +379,6 @@ const Index = () => {
     try {
       setLoading(true);
       
-      // Try to load movies from Supabase first
       let moviesData: Movie[] = [];
       try {
         moviesData = await fetchMovies();
@@ -393,7 +386,6 @@ const Index = () => {
         console.error("Error fetching movies from Supabase:", error);
       }
       
-      // If no movies in Supabase yet, sync the additional movies
       if (moviesData.length === 0) {
         setSyncingMovies(true);
         toast({
@@ -404,37 +396,29 @@ const Index = () => {
         try {
           await addMoviesToSupabase(additionalMovies);
           moviesData = additionalMovies;
+          
+          const moreMovies = await fetchMoreMovies();
+          moviesData = [...moviesData, ...moreMovies];
         } catch (error) {
           console.error("Error adding movies to Supabase:", error);
-          // Fallback to local data
           moviesData = additionalMovies;
         } finally {
           setSyncingMovies(false);
         }
       }
       
+      moviesData = moviesData.map(movie => ({
+        ...movie,
+        rating: movie.rating || 0
+      }));
+      
       setMovies(moviesData);
       setFilteredMovies(moviesData);
       
-      // Get watchlist from Supabase
-      try {
-        const watchlistIds = await fetchWatchlist();
-        setWatchlist(watchlistIds);
-        
-        // Update localStorage to keep it in sync
-        localStorage.setItem("watchlist", JSON.stringify(watchlistIds));
-      } catch (error) {
-        console.error("Error fetching watchlist from Supabase:", error);
-        
-        // Fallback to localStorage
-        const savedWatchlist = localStorage.getItem("watchlist");
-        if (savedWatchlist) {
-          setWatchlist(JSON.parse(savedWatchlist));
-        } else {
-          // Initialize empty watchlist if none exists
-          localStorage.setItem("watchlist", JSON.stringify([]));
-        }
-      }
+      const watchlistIds = await fetchWatchlist();
+      setWatchlist(watchlistIds);
+      
+      localStorage.setItem("watchlist", JSON.stringify(watchlistIds));
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -447,7 +431,6 @@ const Index = () => {
   };
 
   const handleSignOut = async () => {
-    // Clear both Supabase session and localStorage
     await supabase.auth.signOut();
     localStorage.removeItem("user");
     localStorage.removeItem("watchlist");
@@ -470,7 +453,6 @@ const Index = () => {
     setShowWatchlist(!showWatchlist);
   };
 
-  // Update useEffect to properly filter watchlist movies
   useEffect(() => {
     if (showWatchlist) {
       const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
@@ -480,7 +462,6 @@ const Index = () => {
     }
   }, [showWatchlist, watchlist, movies]);
 
-  // Effect to update watchlist state when localStorage changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "watchlist") {
@@ -491,7 +472,6 @@ const Index = () => {
       }
     };
 
-    // Handle when watchlist changes in this tab
     const handleLocalStorageChange = () => {
       const savedWatchlist = localStorage.getItem("watchlist");
       if (savedWatchlist) {
@@ -501,7 +481,6 @@ const Index = () => {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Add a custom event listener for changes in the same window
     window.addEventListener('watchlistUpdated', handleLocalStorageChange);
     
     return () => {
@@ -515,7 +494,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[#141414] px-6 py-8">
       <div className="max-w-7xl mx-auto space-y-12">
-        {/* Header */}
         <header className="flex flex-col items-center gap-8">
           <div className="w-full flex justify-between items-center">
             <h1 className="text-4xl font-bold text-white">
@@ -547,7 +525,6 @@ const Index = () => {
           <SearchBar onSearch={handleSearch} />
         </header>
 
-        {/* Featured Section */}
         <section>
           <h2 className="text-2xl font-bold text-white mb-6">
             {showWatchlist ? "My Watchlist" : "Featured Movies"}

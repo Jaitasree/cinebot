@@ -32,7 +32,7 @@ export const MovieCard = ({
   const movieId = movie?.id || id;
   const movieTitle = movie?.title || title;
   const movieImageUrl = movie?.image_url || imageUrl;
-  const movieRating = movie?.rating || rating;
+  const movieRating = movie?.rating || rating || 0; // Ensure rating is never null
   const movieYear = movie?.year || year;
 
   const [isInWatchlist, setIsInWatchlist] = useState(inWatchlist);
@@ -95,6 +95,9 @@ export const MovieCard = ({
     window.dispatchEvent(new Event('watchlistUpdated'));
   };
 
+  // Format the rating to show one decimal place if it's not a whole number
+  const formattedRating = movieRating % 1 === 0 ? movieRating.toString() : movieRating.toFixed(1);
+
   return (
     <div className={cn("movie-card aspect-[2/3] relative group cursor-pointer overflow-hidden rounded-md", className)}>
       <img
@@ -109,7 +112,7 @@ export const MovieCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-white/90">{movieRating ? movieRating.toFixed(1) : "N/A"}</span>
+            <span className="text-sm text-white/90">{formattedRating}</span>
             <span className="text-sm text-white/60">{movieYear}</span>
           </div>
           <Button
