@@ -110,7 +110,7 @@ export async function fetchWatchlist(): Promise<string[]> {
   return (data || []).map(item => item.movie_id);
 }
 
-// New function to fetch additional movies with real IMDb ratings
+// Function to fetch additional movies with real IMDb ratings
 export async function fetchMoreMovies(): Promise<Movie[]> {
   // Adding 50 additional movies with real IMDb ratings
   const additionalMovies: Movie[] = [
@@ -518,11 +518,12 @@ export async function fetchMoreMovies(): Promise<Movie[]> {
   
   // Add these movies to Supabase for future use
   try {
+    console.log("Starting to add additional movies to database");
     await addMoviesToSupabase(additionalMovies);
-    console.log("Added additional movies to database");
+    console.log("Successfully added additional movies to database");
+    return additionalMovies;
   } catch (error) {
     console.error("Error adding additional movies:", error);
+    throw error;
   }
-  
-  return additionalMovies;
 }

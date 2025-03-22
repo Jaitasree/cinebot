@@ -32,7 +32,7 @@ export const MovieCard = ({
   const movieId = movie?.id || id;
   const movieTitle = movie?.title || title;
   const movieImageUrl = movie?.image_url || imageUrl;
-  const movieRating = movie?.rating || rating || 0; // Ensure rating is never null
+  const movieRating = movie?.rating ?? rating ?? 0; // Use nullish coalescing to handle nulls
   const movieYear = movie?.year || year;
 
   const [isInWatchlist, setIsInWatchlist] = useState(inWatchlist);
@@ -45,7 +45,7 @@ export const MovieCard = ({
 
   // Verify that we have the required properties
   if (!movieId || !movieTitle || !movieImageUrl) {
-    console.error("MovieCard missing required properties");
+    console.error("MovieCard missing required properties:", { movieId, movieTitle, movieImageUrl });
     return null;
   }
 
@@ -96,7 +96,12 @@ export const MovieCard = ({
   };
 
   // Format the rating to show one decimal place if it's not a whole number
-  const formattedRating = movieRating % 1 === 0 ? movieRating.toString() : movieRating.toFixed(1);
+  const formattedRating = 
+    movieRating === null || movieRating === undefined 
+      ? "N/A" 
+      : Number(movieRating) % 1 === 0 
+        ? movieRating.toString() 
+        : Number(movieRating).toFixed(1);
 
   return (
     <div className={cn("movie-card aspect-[2/3] relative group cursor-pointer overflow-hidden rounded-md", className)}>
@@ -105,10 +110,14 @@ export const MovieCard = ({
         alt={movieTitle}
         className="w-full h-full object-cover rounded-md transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
+        onError={(e) => {
+          // Fallback if image fails to load
+          e.currentTarget.src = "https://placehold.co/300x450/404040/FFFFFF?text=No+Image";
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md" />
       <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-        <h3 className="text-lg font-semibold text-white mb-1">{movieTitle}</h3>
+        <h3 className="text-lg font-semibold text-white mb-1 line-clamp-2">{movieTitle}</h3>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Star className="w-4 h-4 text-yellow-400" />
