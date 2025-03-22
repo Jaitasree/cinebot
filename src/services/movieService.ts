@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Movie } from "@/types/movie";
+import { v4 as uuidv4 } from 'uuid';
 
 export async function fetchMovies(): Promise<Movie[]> {
   const { data, error } = await supabase
@@ -24,7 +25,15 @@ export async function addMoviesToSupabase(movies: Movie[]): Promise<void> {
   const batchSize = 10;
   
   for (let i = 0; i < movies.length; i += batchSize) {
-    const batch = movies.slice(i, i + batchSize);
+    const batch = movies.slice(i, i + batchSize).map(movie => ({
+      // Generate proper UUID for each movie instead of string IDs like "movie-1001"
+      id: uuidv4(),
+      title: movie.title,
+      image_url: movie.image_url,
+      year: movie.year,
+      description: movie.description,
+      rating: movie.rating || 0
+    }));
     
     const { error } = await supabase
       .from('movies')

@@ -77,7 +77,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1009",
     title: "Inception",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTYwNTM0MzY2._V1_.jpg",
     year: "2010",
     description: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
     rating: 8.8
