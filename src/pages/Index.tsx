@@ -101,7 +101,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1012",
     title: "The Matrix",
-    image_url: "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWEzMjUtY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "1999",
     description: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
     rating: 8.7
