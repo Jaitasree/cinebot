@@ -205,7 +205,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1025",
     title: "Psycho",
-    image_url: "https://m.media-amazon.com/images/M/MV5BNTQwNDM1YzItNDAxZC00NWY2LTk0M2UtNDIwNWI5OGUyNWUxXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BNTQwNDM1YzItNDAxZC00NWY2LTk0M2UtYzM1M2ZkNWIyODZiXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
     year: "1960",
     description: "A Phoenix secretary embezzles $40,000 from her employer's client, goes on the run, and checks into a remote motel run by a young man under the domination of his mother.",
     rating: 8.5
@@ -344,86 +344,53 @@ const Index = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const initApp = async () => {
-      const testUser = localStorage.getItem("user");
-      if (testUser) {
-        setUser(JSON.parse(testUser));
-        await loadInitialData();
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-      
-      if (!session?.user) {
-        navigate('/auth');
-      } else {
-        await loadInitialData();
-      }
-    };
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null);
-      if (!session?.user) {
-        navigate('/auth');
-      }
-    });
-
-    initApp();
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    const testUser = { id: "test-user-" + Date.now(), email: "test@example.com" };
+    localStorage.setItem("user", JSON.stringify(testUser));
+    setUser(testUser);
+    
+    loadInitialData();
+  }, []);
 
   const loadInitialData = async () => {
     try {
       setLoading(true);
+
+      setSyncingMovies(true);
+      toast({
+        title: "Loading movies",
+        description: "Setting up movie database...",
+      });
       
-      let moviesData: Movie[] = [];
+      let moviesData = [...additionalMovies];
+      
       try {
-        moviesData = await fetchMovies();
-      } catch (error) {
-        console.error("Error fetching movies from Supabase:", error);
-      }
-      
-      if (moviesData.length === 0) {
-        setSyncingMovies(true);
-        toast({
-          title: "First time setup",
-          description: "Adding movies to database...",
-        });
+        const moreMovies = await fetchMoreMovies().catch(() => []);
+        console.log("Loaded additional movies:", moreMovies.length);
         
-        try {
-          await addMoviesToSupabase(additionalMovies);
-          moviesData = additionalMovies;
-          
-          const moreMovies = await fetchMoreMovies();
+        if (moreMovies.length > 0) {
           moviesData = [...moviesData, ...moreMovies];
-        } catch (error) {
-          console.error("Error adding movies to Supabase:", error);
-          moviesData = additionalMovies;
-        } finally {
-          setSyncingMovies(false);
         }
+      } catch (error) {
+        console.error("Error loading more movies:", error);
       }
       
+      console.log("Total movies loaded:", moviesData.length);
+
       moviesData = moviesData.map(movie => ({
         ...movie,
-        rating: movie.rating || 0
+        rating: typeof movie.rating === 'number' ? movie.rating : 0
       }));
       
       setMovies(moviesData);
       setFilteredMovies(moviesData);
       
-      const watchlistIds = await fetchWatchlist();
-      setWatchlist(watchlistIds);
-      
-      localStorage.setItem("watchlist", JSON.stringify(watchlistIds));
-    } catch (error: any) {
+      setSyncingMovies(false);
+    } catch (error) {
+      console.error("Error loading data:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load data"
+        description: "Failed to load movies"
       });
     } finally {
       setLoading(false);
@@ -528,6 +495,9 @@ const Index = () => {
         <section>
           <h2 className="text-2xl font-bold text-white mb-6">
             {showWatchlist ? "My Watchlist" : "Featured Movies"}
+            <span className="text-sm font-normal text-white/50 ml-2">
+              {filteredMovies.length} {filteredMovies.length === 1 ? 'movie' : 'movies'}
+            </span>
           </h2>
           
           {loading ? (
@@ -561,10 +531,10 @@ const Index = () => {
               <div className="bg-[#1a1a1a] p-6 rounded-lg shadow-xl max-w-md w-full">
                 <div className="flex items-center justify-center mb-4">
                   <Loader2 className="w-8 h-8 text-[#E50914] animate-spin mr-3" />
-                  <h3 className="text-xl font-semibold text-white">Syncing Movie Database</h3>
+                  <h3 className="text-xl font-semibold text-white">Loading Movies</h3>
                 </div>
                 <p className="text-white/70 text-sm text-center">
-                  Please wait while we set up your movie database. This may take a moment...
+                  Please wait while we load the movie database...
                 </p>
               </div>
             </div>

@@ -3,51 +3,124 @@ import { supabase } from "@/integrations/supabase/client";
 import { Movie } from "@/types/movie";
 import { v4 as uuidv4 } from 'uuid';
 
+// Local storage key for movies
+const LOCAL_MOVIES_KEY = "local_movies";
+
 export async function fetchMovies(): Promise<Movie[]> {
-  const { data, error } = await supabase
-    .from('movies')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching movies:', error);
-    throw error;
+  try {
+    console.log("Fetching movies from Supabase...");
+    const { data, error } = await supabase
+      .from('movies')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching movies from Supabase:', error);
+      // Try to get movies from local storage as fallback
+      const localMovies = getLocalMovies();
+      console.log(`Retrieved ${localMovies.length} movies from local storage as fallback`);
+      return localMovies;
+    }
+    
+    if (!data || data.length === 0) {
+      console.log("No movies found in Supabase, checking local storage");
+      // Try to get movies from local storage as fallback
+      const localMovies = getLocalMovies();
+      console.log(`Retrieved ${localMovies.length} movies from local storage as fallback`);
+      return localMovies;
+    }
+    
+    console.log(`Successfully fetched ${data.length} movies from Supabase`);
+    
+    // Ensure all movies have a rating value, default to 0 if null
+    const movies = data.map(movie => ({
+      ...movie,
+      rating: movie.rating || 0
+    }));
+    
+    // Store in local storage as a backup
+    setLocalMovies(movies);
+    
+    return movies;
+  } catch (error) {
+    console.error("Unexpected error fetching movies:", error);
+    // Fallback to local storage
+    const localMovies = getLocalMovies();
+    console.log(`Retrieved ${localMovies.length} movies from local storage after error`);
+    return localMovies;
   }
-  
-  // Ensure all movies have a rating value, default to 0 if null
-  return (data || []).map(movie => ({
-    ...movie,
-    rating: movie.rating || 0
-  }));
+}
+
+// Get movies from local storage
+function getLocalMovies(): Movie[] {
+  try {
+    const storedMovies = localStorage.getItem(LOCAL_MOVIES_KEY);
+    if (!storedMovies) return [];
+    
+    const movies: Movie[] = JSON.parse(storedMovies);
+    return movies;
+  } catch (error) {
+    console.error("Error reading movies from local storage:", error);
+    return [];
+  }
+}
+
+// Store movies in local storage
+function setLocalMovies(movies: Movie[]): void {
+  try {
+    localStorage.setItem(LOCAL_MOVIES_KEY, JSON.stringify(movies));
+    console.log(`Stored ${movies.length} movies in local storage`);
+  } catch (error) {
+    console.error("Error storing movies in local storage:", error);
+  }
 }
 
 export async function addMoviesToSupabase(movies: Movie[]): Promise<void> {
   // Process in batches of 10 to avoid payload size issues
   const batchSize = 10;
+  console.log(`Adding ${movies.length} movies to Supabase in batches of ${batchSize}...`);
   
-  for (let i = 0; i < movies.length; i += batchSize) {
-    const batch = movies.slice(i, i + batchSize).map(movie => ({
-      // Generate proper UUID for each movie instead of string IDs like "movie-1001"
-      id: uuidv4(),
-      title: movie.title,
-      image_url: movie.image_url,
-      year: movie.year,
-      description: movie.description,
-      rating: movie.rating || 0
-    }));
-    
-    const { error } = await supabase
-      .from('movies')
-      .upsert(batch, { 
-        onConflict: 'id',
-        ignoreDuplicates: false
+  try {
+    for (let i = 0; i < movies.length; i += batchSize) {
+      const batch = movies.slice(i, i + batchSize).map(movie => {
+        // Use existing ID if it's a UUID, otherwise generate a new one
+        const id = movie.id && !movie.id.startsWith('movie-') ? movie.id : uuidv4();
+        
+        return {
+          id,
+          title: movie.title,
+          image_url: movie.image_url,
+          year: movie.year,
+          description: movie.description,
+          rating: Number(movie.rating) || 0
+        };
       });
-    
-    if (error) {
-      console.error(`Error adding movies batch ${i}:`, error);
-      throw error;
+      
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1} with ${batch.length} movies`);
+      
+      const { error } = await supabase
+        .from('movies')
+        .upsert(batch, { 
+          onConflict: 'id',
+          ignoreDuplicates: false
+        });
+      
+      if (error) {
+        console.error(`Error adding movies batch ${i}:`, error);
+        throw error;
+      }
+      
+      console.log(`Successfully added batch ${Math.floor(i / batchSize) + 1} of movies`);
     }
     
-    console.log(`Added batch ${i / batchSize + 1} of movies`);
+    // After adding to Supabase, also store locally
+    setLocalMovies(movies);
+    
+    console.log(`Finished adding ${movies.length} movies to Supabase`);
+  } catch (error) {
+    console.error("Error in addMoviesToSupabase:", error);
+    // At least save to local storage
+    setLocalMovies(movies);
+    throw error;
   }
 }
 
@@ -521,9 +594,13 @@ export async function fetchMoreMovies(): Promise<Movie[]> {
     console.log("Starting to add additional movies to database");
     await addMoviesToSupabase(additionalMovies);
     console.log("Successfully added additional movies to database");
+    // Also store in local storage for offline access
+    setLocalMovies(additionalMovies);
     return additionalMovies;
   } catch (error) {
     console.error("Error adding additional movies:", error);
-    throw error;
+    // Store locally even if Supabase fails
+    setLocalMovies(additionalMovies);
+    return additionalMovies;
   }
 }
