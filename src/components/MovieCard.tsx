@@ -1,3 +1,4 @@
+
 import { Star, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -54,24 +55,82 @@ export const MovieCard = ({
     return null;
   }
 
-  // Fallback images - these will be used if the original image fails to load
-  const fallbackImages = [
-    "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg", // Dark Knight
-    "https://m.media-amazon.com/images/M/MV5BZjA0OWVhOTAtYWQxNi00YzNhLWI4ZjYtNjM2ODgxN2M5NjNkXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // Matrix
-    "https://m.media-amazon.com/images/M/MV5BMWMwMGQzZTItY2JlNC00OWZiLWIyMDctNDk2ZDQ2YjRjMWQ0XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // Godfather II
-    "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // Pulp Fiction
-    "https://m.media-amazon.com/images/M/MV5BNDE4OTMxMTctNmRhYy00NWE2LTg3YzItYTk3M2UwOTU5Njg4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // Schindler's List
-  ];
+  // Themed fallback images that more closely match the type of movie
+  const getFallbackImage = (title: string) => {
+    // Dictionary of known movie images for popular titles
+    const knownMoviePosters: Record<string, string> = {
+      "The Shawshank Redemption": "https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+      "The Godfather": "https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+      "The Dark Knight": "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg",
+      "The Godfather Part II": "https://m.media-amazon.com/images/M/MV5BMWMwMGQzZTItY2JlNC00OWZiLWIyMDctNDk2ZDQ2YjRjMWQ0XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+      "12 Angry Men": "https://m.media-amazon.com/images/M/MV5BMWU4N2FjNzYtNTVkNC00NzQ0LTg0MjAtYTJlMjFhNGUxZDFmXkEyXkFqcGdeQXVyNjc1NTYyMjg@._V1_.jpg",
+      "Schindler's List": "https://m.media-amazon.com/images/M/MV5BNDE4OTMxMTctNmRhYy00NWE2LTg3YzItYTk3M2UwOTU5Njg4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+      "The Lord of the Rings: The Return of the King": "https://m.media-amazon.com/images/M/MV5BNzA5ZDNlZWMtM2NhNS00NDJjLTk4NDItYTRmY2EwMWZlMTY3XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+      "Pulp Fiction": "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+      "Fight Club": "https://m.media-amazon.com/images/M/MV5BMmEzNTkxYjQtZTc0MC00YTVjLTg5ZTEtZWMwOWVlYzY0NWIwXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+      "Inception": "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg",
+      "The Matrix": "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI4ZjYtNWFkNWJlZWY0NWIyXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+      "Goodfellas": "https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2RjYy00YzM1LWI4ZmQtMjIwYjFjNmI3ZGEwXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+      "Forrest Gump": "https://m.media-amazon.com/images/M/MV5BNWIwODRlZTUtY2U3ZS00Yzg1LWJhNzYtMmZiYmEyNmU1NjMzXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_.jpg",
+      "Interstellar": "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjUtY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+      "The Silence of the Lambs": "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZmMGMwMTU4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+      "The Departed": "https://m.media-amazon.com/images/M/MV5BMTI1MTY2OTIxNV5BMl5BanBnXkFtZTYwNjQ4NjY3._V1_.jpg",
+      "Whiplash": "https://m.media-amazon.com/images/M/MV5BOTA5NDZlZGUtMjAxOS00YTRkLTkwYmMtYWQ0NWEwZDZiNjEzXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+      "The Prestige": "https://m.media-amazon.com/images/M/MV5BMjA4NDI0MTIxNF5BMl5BanBnXkFtZTYwNTM0MzY2._V1_.jpg",
+      "The Green Mile": "https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_.jpg",
+      "Parasite": "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_.jpg"
+    };
+
+    // If we have a known poster for this exact movie title, use it
+    if (knownMoviePosters[title]) {
+      return knownMoviePosters[title];
+    }
+
+    // Genre-based fallbacks for movies not in our dictionary
+    // Check title for keywords to guess the genre
+    const lowerTitle = title.toLowerCase();
+    
+    if (lowerTitle.includes('star') || lowerTitle.includes('wars') || lowerTitle.includes('trek') || 
+        lowerTitle.includes('alien') || lowerTitle.includes('interstellar') || lowerTitle.includes('martian')) {
+      return "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjUtY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg"; // Interstellar
+    }
+    
+    if (lowerTitle.includes('godfather') || lowerTitle.includes('mafia') || lowerTitle.includes('mob') || 
+        lowerTitle.includes('crime') || lowerTitle.includes('gang')) {
+      return "https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg"; // The Godfather
+    }
+    
+    if (lowerTitle.includes('war') || lowerTitle.includes('soldier') || lowerTitle.includes('battle') || 
+        lowerTitle.includes('army') || lowerTitle.includes('military')) {
+      return "https://m.media-amazon.com/images/M/MV5BZjhkMDM4MWItZTVjOC00ZDRhLThmYTAtM2I5NzBmNmNlMzI1XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_.jpg"; // Saving Private Ryan
+    }
+    
+    if (lowerTitle.includes('horror') || lowerTitle.includes('scary') || lowerTitle.includes('fear') || 
+        lowerTitle.includes('terror') || lowerTitle.includes('nightmare')) {
+      return "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZmMGMwMTU4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg"; // The Silence of the Lambs
+    }
+    
+    // Default fallbacks for any other movie
+    const genericFallbacks = [
+      "https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg", // Shawshank
+      "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg", // Dark Knight
+      "https://m.media-amazon.com/images/M/MV5BNDE4OTMxMTctNmRhYy00NWE2LTg3YzItYTk3M2UwOTU5Njg4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // Schindler's List
+      "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // Pulp Fiction
+      "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI4ZjYtNWFkNWJlZWY0NWIyXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg"  // The Matrix
+    ];
+    
+    // Use the movie title to deterministically select a fallback (same movie always gets same fallback)
+    const hashCode = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return genericFallbacks[hashCode % genericFallbacks.length];
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    // If the current image fails, select a random fallback image
-    const randomIndex = Math.floor(Math.random() * fallbackImages.length);
-    const newImgSrc = fallbackImages[randomIndex];
+    const fallbackImage = getFallbackImage(movieTitle);
     
     // Only change the source if it's different to avoid infinite error loops
-    if (newImgSrc !== imgSrc) {
-      console.log(`Image failed to load for ${movieTitle}, using fallback: ${newImgSrc}`);
-      setImgSrc(newImgSrc);
+    if (fallbackImage !== imgSrc) {
+      console.log(`Image failed to load for ${movieTitle}, using themed fallback`);
+      setImgSrc(fallbackImage);
     } else {
       // Last resort fallback if somehow we got the same image again
       e.currentTarget.src = "https://placehold.co/300x450/333333/FFFFFF?text=Movie";
