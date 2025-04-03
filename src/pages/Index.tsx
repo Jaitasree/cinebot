@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
@@ -361,6 +362,7 @@ const Index = () => {
         description: "Setting up movie database...",
       });
       
+      // Get our movies data
       let moviesData = [...additionalMovies];
       
       try {
@@ -374,12 +376,19 @@ const Index = () => {
         console.error("Error loading more movies:", error);
       }
       
-      console.log("Total movies loaded:", moviesData.length);
-
+      // Filter out movies without valid image URLs
+      moviesData = moviesData.filter(movie => {
+        // Check if the movie has an image_url
+        return movie.image_url && movie.image_url.trim() !== '';
+      });
+      
+      // Ensure ratings are numbers
       moviesData = moviesData.map(movie => ({
         ...movie,
         rating: typeof movie.rating === 'number' ? movie.rating : 0
       }));
+      
+      console.log("Total movies loaded (after filtering):", moviesData.length);
       
       setMovies(moviesData);
       setFilteredMovies(moviesData);
