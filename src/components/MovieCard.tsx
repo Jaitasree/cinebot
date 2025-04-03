@@ -1,4 +1,3 @@
-
 import { Star, Bookmark, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,6 +35,7 @@ export const MovieCard = ({
   const movieYear = movie?.year || year;
 
   const [isInWatchlist, setIsInWatchlist] = useState(inWatchlist);
+  const [imgSrc, setImgSrc] = useState(movieImageUrl);
   const { toast } = useToast();
 
   // Sync the internal state with the prop when it changes
@@ -43,11 +43,40 @@ export const MovieCard = ({
     setIsInWatchlist(inWatchlist);
   }, [inWatchlist]);
 
+  // Update image source when movieImageUrl changes
+  useEffect(() => {
+    setImgSrc(movieImageUrl);
+  }, [movieImageUrl]);
+
   // Verify that we have the required properties
-  if (!movieId || !movieTitle || !movieImageUrl) {
-    console.error("MovieCard missing required properties:", { movieId, movieTitle, movieImageUrl });
+  if (!movieId || !movieTitle) {
+    console.error("MovieCard missing required properties:", { movieId, movieTitle });
     return null;
   }
+
+  // Fallback images - these will be used if the original image fails to load
+  const fallbackImages = [
+    "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg", // Dark Knight
+    "https://m.media-amazon.com/images/M/MV5BZjA0OWVhOTAtYWQxNi00YzNhLWI4ZjYtNjM2ODgxN2M5NjNkXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // Matrix
+    "https://m.media-amazon.com/images/M/MV5BMWMwMGQzZTItY2JlNC00OWZiLWIyMDctNDk2ZDQ2YjRjMWQ0XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // Godfather II
+    "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // Pulp Fiction
+    "https://m.media-amazon.com/images/M/MV5BNDE4OTMxMTctNmRhYy00NWE2LTg3YzItYTk3M2UwOTU5Njg4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // Schindler's List
+  ];
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    // If the current image fails, select a random fallback image
+    const randomIndex = Math.floor(Math.random() * fallbackImages.length);
+    const newImgSrc = fallbackImages[randomIndex];
+    
+    // Only change the source if it's different to avoid infinite error loops
+    if (newImgSrc !== imgSrc) {
+      console.log(`Image failed to load for ${movieTitle}, using fallback: ${newImgSrc}`);
+      setImgSrc(newImgSrc);
+    } else {
+      // Last resort fallback if somehow we got the same image again
+      e.currentTarget.src = "https://placehold.co/300x450/333333/FFFFFF?text=Movie";
+    }
+  };
 
   const handleWatchlistToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -106,14 +135,11 @@ export const MovieCard = ({
   return (
     <div className={cn("movie-card aspect-[2/3] relative group cursor-pointer overflow-hidden rounded-md", className)}>
       <img
-        src={movieImageUrl}
+        src={imgSrc}
         alt={movieTitle}
         className="w-full h-full object-cover rounded-md transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
-        onError={(e) => {
-          // Fallback if image fails to load
-          e.currentTarget.src = "https://placehold.co/300x450/404040/FFFFFF?text=No+Image";
-        }}
+        onError={handleImageError}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md" />
       <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
