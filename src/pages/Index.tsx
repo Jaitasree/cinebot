@@ -362,7 +362,7 @@ const Index = () => {
         description: "Setting up movie database...",
       });
       
-      // Get our movies data
+      // Get our movies data from additionalMovies
       let moviesData = [...additionalMovies];
       
       try {
@@ -378,9 +378,20 @@ const Index = () => {
       
       // Filter out movies without valid image URLs
       moviesData = moviesData.filter(movie => {
-        // Check if the movie has an image_url
-        return movie.image_url && movie.image_url.trim() !== '';
+        return movie.title && movie.title.trim() !== '' &&
+               movie.image_url && movie.image_url.trim() !== '';
       });
+      
+      // Ensure no duplicate movies by title
+      const uniqueMovies = new Map();
+      moviesData.forEach(movie => {
+        if (!uniqueMovies.has(movie.title)) {
+          uniqueMovies.set(movie.title, movie);
+        }
+      });
+      
+      // Convert back to array
+      moviesData = Array.from(uniqueMovies.values());
       
       // Ensure ratings are numbers
       moviesData = moviesData.map(movie => ({

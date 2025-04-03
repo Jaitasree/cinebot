@@ -57,7 +57,7 @@ export const MovieCard = ({
     return null;
   }
 
-  // Dictionary of verified working movie posters for popular titles
+  // Improved dictionary of verified working movie posters based on movie titles
   const knownMoviePosters: Record<string, string> = {
     "The Shawshank Redemption": "https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
     "The Godfather": "https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
@@ -92,39 +92,50 @@ export const MovieCard = ({
     "Memento": "https://m.media-amazon.com/images/M/MV5BZTcyNjk1MjgtOWI3Mi00YzQwLWI5MTktMzY4ZmI2NDAyNzYzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     "Django Unchained": "https://m.media-amazon.com/images/M/MV5BMjIyNTQ5NjQ1OV5BMl5BanBnXkFtZTcwODg1MDU4OA@@._V1_.jpg",
     "Raiders of the Lost Ark": "https://m.media-amazon.com/images/M/MV5BMjA0ODEzMTc1Nl5BMl5BanBnXkFtZTcwODM2MjAxNA@@._V1_.jpg",
-    "WALL·E": "https://m.media-amazon.com/images/M/MV5BMjExMTg5OTU0NF5BMl5BanBnXkFtZTcwMjMxMzMzMw@@._V1_.jpg"
+    "WALL·E": "https://m.media-amazon.com/images/M/MV5BMjExMTg5OTU0NF5BMl5BanBnXkFtZTcwMjMxMzMzMw@@._V1_.jpg",
+    "The Lives of Others": "https://m.media-amazon.com/images/M/MV5BOTNmZjA2ZmQtYWU1Yy00ZmVlLTg2NmItM2JlNzU5ZTBiNzM4XkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+    "Sunset Blvd.": "https://m.media-amazon.com/images/M/MV5BMTU0NTkyNzYwMF5BMl5BanBnXkFtZTgwMDU0NDk5MTI@._V1_.jpg",
+    "Paths of Glory": "https://m.media-amazon.com/images/M/MV5BOTI5Nzc0OTMtYzBkMS00NjkxLThmM2UtNjM2ODgxN2M5NjNkXkEyXkFqcGdeQXVyNjQ2MjQ5NzM@._V1_.jpg",
+    "City Lights": "https://m.media-amazon.com/images/M/MV5BY2I4MmM1N2EtM2YzOS00OWUzLTkzYzctNDc5NDg2N2IyODJmXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    "The Intouchables": "https://m.media-amazon.com/images/M/MV5BMTYxNDA3MDQwNl5BMl5BanBnXkFtZTcwNTU4Mzc1Nw@@._V1_.jpg",
+    "Modern Times": "https://m.media-amazon.com/images/M/MV5BYjJiZjMzYzktNjU0NS00OTkxLWEwYzItYzdhYWJjN2QzMTRlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg"
   };
 
-  // Category-specific fallback images (each unique)
+  // Generic, unique fallback posters by category
   const categoryFallbacks = {
-    scifi: "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI4ZjYtNWFkNWJlZWY0NWIyXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // The Matrix
-    drama: "https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg", // Shawshank
-    action: "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg", // Dark Knight
-    crime: "https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // Godfather
-    war: "https://m.media-amazon.com/images/M/MV5BZjhkMDM4MWItZTVjOC00ZDRhLThmYTAtM2I5NzBmNmNlMzI1XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_.jpg", // Saving Private Ryan
-    horror: "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZmMGMwMTU4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg", // Silence of the Lambs
-    animation: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWE5ZWItZDBhYWQ0NTcxNWRhXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg", // Spirited Away
-    western: "https://m.media-amazon.com/images/M/MV5BMjIyNTQ5NjQ1OV5BMl5BanBnXkFtZTcwODg1MDU4OA@@._V1_.jpg", // Django Unchained
-    historical: "https://m.media-amazon.com/images/M/MV5BNDE4OTMxMTctNmRhYy00NWE2LTg3YzItYTk3M2UwOTU5Njg4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg" // Schindler's List
+    scifi: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1934&auto=format&fit=crop&ixlib=rb-4.0.3", // Space theme
+    drama: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1918&auto=format&fit=crop&ixlib=rb-4.0.3", // Theater theme
+    action: "https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?q=80&w=2080&auto=format&fit=crop&ixlib=rb-4.0.3", // Action theme
+    crime: "https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3", // Crime theme
+    war: "https://images.unsplash.com/photo-1580418827493-f2b22c0a76cb?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3", // War theme
+    horror: "https://images.unsplash.com/photo-1626194062394-02b562f2dce1?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3", // Horror theme
+    animation: "https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.0.3", // Animation theme
+    western: "https://images.unsplash.com/photo-1517817828584-ca00e1056a4d?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3", // Western theme
+    historical: "https://images.unsplash.com/photo-1503409335829-423abe35a6d5?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3" // Historical theme
   };
 
-  // Unique fallback images for movies that don't fit any category (all different from category fallbacks)
+  // Completely unique generic fallbacks for any title that doesn't fit a category
   const uniqueFallbacks = [
-    "https://m.media-amazon.com/images/M/MV5BOTNmZjA2ZmQtYWU1Yy00ZmVlLTg2NmItM2JlNzU5ZTBiNzM4XkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg", // The Lives of Others
-    "https://m.media-amazon.com/images/M/MV5BMTU0NTkyNzYwMF5BMl5BanBnXkFtZTgwMDU0NDk5MTI@._V1_.jpg", // Sunset Blvd
-    "https://m.media-amazon.com/images/M/MV5BOTI5Nzc0OTMtYzBkMS00NjkxLThmM2UtNjM2ODgxN2M5NjNkXkEyXkFqcGdeQXVyNjQ2MjQ5NzM@._V1_.jpg", // Paths of Glory
-    "https://m.media-amazon.com/images/M/MV5BY2I4MmM1N2EtM2YzOS00OWUzLTkzYzctNDc5NDg2N2IyODJmXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg", // City Lights
-    "https://m.media-amazon.com/images/M/MV5BMTYxNDA3MDQwNl5BMl5BanBnXkFtZTcwNTU4Mzc1Nw@@._V1_.jpg", // The Intouchables
-    "https://m.media-amazon.com/images/M/MV5BYjJiZjMzYzktNjU0NS00OTkxLWEwYzItYzdhYWJjN2QzMTRlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg" // Modern Times
+    "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1918&auto=format&fit=crop&ixlib=rb-4.0.3", // Theater
+    "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3", // Film reel
+    "https://images.unsplash.com/photo-1581905764498-f1b60bae941a?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3", // Popcorn
+    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", // Theater seating
+    "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", // Film strip
+    "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3", // Audience
+    "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", // Cinema
+    "https://images.unsplash.com/photo-1533488765986-dfa2a9939acd?q=80&w=1878&auto=format&fit=crop&ixlib=rb-4.0.3", // Movie ticket
+    "https://images.unsplash.com/photo-1574267432553-4b4628081c31?q=80&w=1631&auto=format&fit=crop&ixlib=rb-4.0.3", // Clapper board
+    "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1925&auto=format&fit=crop&ixlib=rb-4.0.3" // Camera
   ];
 
+  // Function to get a unique movie poster based on title
   const getUniqueMoviePoster = (title: string) => {
-    // If we have a verified poster for this movie, use it first
+    // First try the known movie poster dictionary
     if (knownMoviePosters[title]) {
       return knownMoviePosters[title];
     }
     
-    // Determine the most likely category based on the title
+    // Then try to categorize by keywords in the title
     const lowerTitle = title.toLowerCase();
     
     if (lowerTitle.includes('star') || lowerTitle.includes('wars') || lowerTitle.includes('trek') || 
@@ -161,12 +172,13 @@ export const MovieCard = ({
       return categoryFallbacks.historical;
     }
     
-    // If no category matches, use the title's hash to deterministically select a unique fallback
-    // This ensures the same movie always gets the same fallback
+    // If no category matches, use the hash of the title to pick a unique fallback
+    // This ensures consistent fallbacks for the same title
     const hashCode = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return uniqueFallbacks[hashCode % uniqueFallbacks.length];
   };
 
+  // Handle image loading errors
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const uniqueFallback = getUniqueMoviePoster(movieTitle);
     
@@ -175,7 +187,7 @@ export const MovieCard = ({
       console.log(`Image failed to load for ${movieTitle}, using unique fallback`);
       setImgSrc(uniqueFallback);
     } else {
-      // Last resort fallback if somehow we got the same image again
+      // Last resort if somehow we got the same image again
       setHasValidImage(false);
     }
   };
