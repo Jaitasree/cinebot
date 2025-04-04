@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { SearchBar } from "@/components/SearchBar";
+import { SearchBar, SearchFilters } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +30,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1003",
     title: "The Dark Knight",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTYwNTM0MzY2._V1_.jpg",
     year: "2008",
     description: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
     rating: 9.0
@@ -353,7 +353,6 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    // Delete the specified movies
     const moviesToDelete = ["Seven Samurai", "The Third Man"];
     deleteMoviesByTitle(moviesToDelete)
       .then(() => console.log("Successfully deleted specified movies"))
@@ -370,7 +369,6 @@ const Index = () => {
         description: "Setting up movie database...",
       });
       
-      // Get our movies data from additionalMovies
       let moviesData = [...additionalMovies];
       
       try {
@@ -384,13 +382,11 @@ const Index = () => {
         console.error("Error loading more movies:", error);
       }
       
-      // Filter out movies without valid image URLs
       moviesData = moviesData.filter(movie => {
         return movie.title && movie.title.trim() !== '' &&
                movie.image_url && movie.image_url.trim() !== '';
       });
       
-      // Ensure no duplicate movies by title
       const uniqueMovies = new Map();
       moviesData.forEach(movie => {
         if (!uniqueMovies.has(movie.title)) {
@@ -398,10 +394,8 @@ const Index = () => {
         }
       });
       
-      // Convert back to array
       moviesData = Array.from(uniqueMovies.values());
       
-      // Ensure ratings are numbers
       moviesData = moviesData.map(movie => ({
         ...movie,
         rating: typeof movie.rating === 'number' ? movie.rating : 0
@@ -432,16 +426,36 @@ const Index = () => {
     navigate('/auth');
   };
 
-  const handleSearch = useCallback((query: string) => {
-    if (!query.trim()) {
-      setFilteredMovies(movies);
-      return;
+  const handleSearch = useCallback((filters: SearchFilters) => {
+    if (!movies.length) return;
+    
+    let results = [...movies];
+    
+    if (filters.query?.trim()) {
+      results = results.filter(movie => 
+        movie.title.toLowerCase().includes(filters.query.toLowerCase())
+      );
     }
     
-    const filtered = movies.filter(movie => 
-      movie.title.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredMovies(filtered);
+    if (filters.genre) {
+      results = results.filter(movie => 
+        movie.description?.toLowerCase().includes(filters.genre.toLowerCase())
+      );
+    }
+    
+    if (filters.year) {
+      results = results.filter(movie => 
+        movie.year === filters.year
+      );
+    }
+    
+    if (filters.minRating !== undefined) {
+      results = results.filter(movie => 
+        (movie.rating || 0) >= filters.minRating!
+      );
+    }
+    
+    setFilteredMovies(results);
   }, [movies]);
 
   const toggleWatchlist = () => {
