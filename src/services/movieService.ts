@@ -183,6 +183,45 @@ export async function fetchWatchlist(): Promise<string[]> {
   return (data || []).map(item => item.movie_id);
 }
 
+// Function to delete movies by title
+export async function deleteMoviesByTitle(titles: string[]): Promise<void> {
+  if (!titles || titles.length === 0) {
+    console.log("No titles provided for deletion");
+    return;
+  }
+  
+  console.log(`Attempting to delete movies with titles: ${titles.join(', ')}`);
+  
+  try {
+    // Delete from Supabase
+    for (const title of titles) {
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .ilike('title', title);
+      
+      if (error) {
+        console.error(`Error deleting movie "${title}" from Supabase:`, error);
+      } else {
+        console.log(`Successfully deleted movie "${title}" from Supabase`);
+      }
+    }
+    
+    // Update local storage to reflect the changes
+    const localMovies = getLocalMovies();
+    const updatedMovies = localMovies.filter(movie => 
+      !titles.some(title => movie.title.toLowerCase() === title.toLowerCase())
+    );
+    
+    setLocalMovies(updatedMovies);
+    console.log(`Updated local storage after deletion. Remaining movies: ${updatedMovies.length}`);
+    
+  } catch (error) {
+    console.error("Error in deleteMoviesByTitle:", error);
+    throw error;
+  }
+}
+
 // Function to fetch additional movies with real IMDb ratings
 export async function fetchMoreMovies(): Promise<Movie[]> {
   // Adding 50 additional movies with real IMDb ratings
@@ -195,14 +234,7 @@ export async function fetchMoreMovies(): Promise<Movie[]> {
       description: "In the midst of trying to legitimize his business dealings in New York City and Italy in 1979, aging Mafia Don Michael Corleone seeks to avow for his sins, while taking his nephew Vincent Mancini under his wing.",
       rating: 7.6
     },
-    {
-      id: "movie-2002",
-      title: "Seven Samurai",
-      image_url: "https://m.media-amazon.com/images/M/MV5BNWQ3OTM4ZGItMWEwZi00MjI5LWI3YzgtNTYwNWRkNmIzMGI5XkEyXkFqcGdeQXVyNDY2MTk1ODk@._V1_.jpg",
-      year: "1954",
-      description: "A poor village under attack by bandits recruits seven unemployed samurai to help them defend themselves.",
-      rating: 8.6
-    },
+    // Remove "Seven Samurai" movie
     {
       id: "movie-2003",
       title: "Casablanca",
@@ -267,18 +299,11 @@ export async function fetchMoreMovies(): Promise<Movie[]> {
       description: "A research team in Antarctica is hunted by a shape-shifting alien that assumes the appearance of its victims.",
       rating: 8.2
     },
-    {
-      id: "movie-2011",
-      title: "The Third Man",
-      image_url: "https://m.media-amazon.com/images/M/MV5BYjE2OTdhMWUtOGJlMy00ZDViLWIzZjgtYjZkZGZmMDZjYmEyXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
-      year: "1949",
-      description: "Pulp novelist Holly Martins travels to shadowy, postwar Vienna, only to find himself investigating the mysterious death of an old friend, Harry Lime.",
-      rating: 8.1
-    },
+    // Remove "The Third Man" movie
     {
       id: "movie-2012",
       title: "North by Northwest",
-      image_url: "https://m.media-amazon.com/images/M/MV5BZDA3NDExMTUtMDlhOC00MmQ5LWExZGUtYmI1NGVlZWI4OWNiXkEyXkFqcGdeQXVyNjc1NTYyMjg@._V1_.jpg",
+      image_url: "https://m.media-amazon.com/images/M/MV5BZDA3NDExMTUtMDlhOC00ZDZhLTk4YzEtMDMyMzcxY2IwMDAyXkEyXkFqcGdeQXVyNjc1NTYyMjg@._V1_.jpg",
       year: "1959",
       description: "A New York City advertising executive goes on the run after being mistaken for a government agent by a group of foreign spies.",
       rating: 8.3

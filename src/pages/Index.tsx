@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
@@ -9,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Bookmark, Loader2 } from "lucide-react";
 import { Movie } from "@/types/movie";
 import { fetchMovies, addMoviesToSupabase, fetchWatchlist, fetchMoreMovies } from "@/services/movieService";
+import { deleteMoviesByTitle } from "@/services/movieService";
 
 const additionalMovies: Movie[] = [
   {
@@ -110,7 +110,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1013",
     title: "Goodfellas",
-    image_url: "https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2RjYy00YzM1LWI4ZmQtMjIwYjFjNmI3ZGEwXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2IxOS00YzM1LWI4ZmQtMjIwYjFjNmI3ZGEwXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg",
     year: "1990",
     description: "The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito in the Italian-American crime syndicate.",
     rating: 8.7
@@ -350,6 +350,14 @@ const Index = () => {
     setUser(testUser);
     
     loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    // Delete the specified movies
+    const moviesToDelete = ["Seven Samurai", "The Third Man"];
+    deleteMoviesByTitle(moviesToDelete)
+      .then(() => console.log("Successfully deleted specified movies"))
+      .catch(error => console.error("Error deleting movies:", error));
   }, []);
 
   const loadInitialData = async () => {
