@@ -65,9 +65,11 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
   
   const [tempSelectedGenre, setTempSelectedGenre] = useState<string | undefined>(undefined);
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
+  const [genrePopoverOpen, setGenrePopoverOpen] = useState(false);
   
   const [tempSelectedYear, setTempSelectedYear] = useState<string | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
+  const [yearPopoverOpen, setYearPopoverOpen] = useState(false);
   
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,10 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     setSelectedYear(undefined);
     setMinRating(undefined);
     
+    // Close popovers
+    setGenrePopoverOpen(false);
+    setYearPopoverOpen(false);
+    
     // Trigger search with reset filters
     onSearch({
       query: searchQuery,
@@ -124,6 +130,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
 
   const applyGenreFilter = () => {
     setSelectedGenre(tempSelectedGenre);
+    setGenrePopoverOpen(false); // Close popover after applying
     onSearch({
       query: searchQuery,
       genre: tempSelectedGenre,
@@ -132,14 +139,25 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     });
   };
 
+  const cancelGenreFilter = () => {
+    setTempSelectedGenre(selectedGenre); // Reset to previous selection
+    setGenrePopoverOpen(false); // Close popover without applying
+  };
+
   const applyYearFilter = () => {
     setSelectedYear(tempSelectedYear);
+    setYearPopoverOpen(false); // Close popover after applying
     onSearch({
       query: searchQuery,
       genre: selectedGenre,
       year: tempSelectedYear,
       minRating: minRating,
     });
+  };
+
+  const cancelYearFilter = () => {
+    setTempSelectedYear(selectedYear); // Reset to previous selection
+    setYearPopoverOpen(false); // Close popover without applying
   };
 
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
@@ -185,13 +203,16 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
             {/* Genre filter */}
             <div>
               <p className="text-sm font-medium text-white/70 mb-2">Genre</p>
-              <Popover>
+              <Popover open={genrePopoverOpen} onOpenChange={setGenrePopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
                   >
-                    {tempSelectedGenre || selectedGenre || "Select Genre"}
+                    {selectedGenre || "Select Genre"}
+                    {selectedGenre && (
+                      <span className="ml-2 w-2 h-2 rounded-full bg-[#E50914]"></span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
@@ -218,7 +239,14 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                       </CommandGroup>
                     </CommandList>
                   </Command>
-                  <div className="p-2 flex justify-end border-t border-[#333]">
+                  <div className="p-2 flex justify-between border-t border-[#333]">
+                    <Button 
+                      onClick={cancelGenreFilter}
+                      variant="outline"
+                      className="bg-transparent border-[#333] text-white hover:bg-[#333]"
+                    >
+                      Cancel
+                    </Button>
                     <Button 
                       onClick={applyGenreFilter}
                       className="bg-[#E50914] text-white hover:bg-[#C30813]"
@@ -233,13 +261,16 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
             {/* Year filter */}
             <div>
               <p className="text-sm font-medium text-white/70 mb-2">Year</p>
-              <Popover>
+              <Popover open={yearPopoverOpen} onOpenChange={setYearPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
                   >
-                    {tempSelectedYear || selectedYear || "Select Year"}
+                    {selectedYear || "Select Year"}
+                    {selectedYear && (
+                      <span className="ml-2 w-2 h-2 rounded-full bg-[#E50914]"></span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
@@ -266,7 +297,14 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                       </CommandGroup>
                     </CommandList>
                   </Command>
-                  <div className="p-2 flex justify-end border-t border-[#333]">
+                  <div className="p-2 flex justify-between border-t border-[#333]">
+                    <Button 
+                      onClick={cancelYearFilter}
+                      variant="outline"
+                      className="bg-transparent border-[#333] text-white hover:bg-[#333]"
+                    >
+                      Cancel
+                    </Button>
                     <Button 
                       onClick={applyYearFilter}
                       className="bg-[#E50914] text-white hover:bg-[#C30813]"
