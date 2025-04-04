@@ -2,58 +2,9 @@
 import { Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Toggle } from "@/components/ui/toggle";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-
-export interface SearchFilters {
-  query: string;
-  genre?: string;
-  year?: string;
-  minRating?: number;
-}
-
-export const genres = [
-  "Action",
-  "Adventure",
-  "Animation",
-  "Biography",
-  "Comedy",
-  "Crime",
-  "Documentary",
-  "Drama",
-  "Fantasy",
-  "History",
-  "Horror",
-  "Mystery",
-  "Romance",
-  "Sci-Fi",
-  "Thriller",
-  "War",
-  "Western",
-];
-
-// Generate year options from 1930 to current year
-const currentYear = new Date().getFullYear();
-export const years = Array.from(
-  { length: currentYear - 1929 },
-  (_, i) => `${currentYear - i}`
-);
-
-export const ratingOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+import { FilterPanel } from "@/components/filters/FilterPanel";
+import { SearchFilters } from "@/components/filters/types";
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -62,15 +13,8 @@ interface SearchBarProps {
 export const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  
-  const [tempSelectedGenre, setTempSelectedGenre] = useState<string | undefined>(undefined);
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
-  const [genrePopoverOpen, setGenrePopoverOpen] = useState(false);
-  
-  const [tempSelectedYear, setTempSelectedYear] = useState<string | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
-  const [yearPopoverOpen, setYearPopoverOpen] = useState(false);
-  
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +38,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     };
   }, [showFilters]);
 
-  // Only trigger search when searchQuery or minRating changes, genre and year will use Apply button
+  // Trigger search when searchQuery or minRating changes
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       onSearch({
@@ -107,58 +51,6 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, selectedGenre, selectedYear, minRating, onSearch]);
-
-  const resetFilters = () => {
-    setTempSelectedGenre(undefined);
-    setSelectedGenre(undefined);
-    setTempSelectedYear(undefined);
-    setSelectedYear(undefined);
-    setMinRating(undefined);
-    
-    // Close popovers
-    setGenrePopoverOpen(false);
-    setYearPopoverOpen(false);
-    
-    // Trigger search with reset filters
-    onSearch({
-      query: searchQuery,
-      genre: undefined,
-      year: undefined,
-      minRating: undefined,
-    });
-  };
-
-  const applyGenreFilter = () => {
-    setSelectedGenre(tempSelectedGenre);
-    setGenrePopoverOpen(false); // Close popover after applying
-    onSearch({
-      query: searchQuery,
-      genre: tempSelectedGenre,
-      year: selectedYear,
-      minRating: minRating,
-    });
-  };
-
-  const cancelGenreFilter = () => {
-    setTempSelectedGenre(selectedGenre); // Reset to previous selection
-    setGenrePopoverOpen(false); // Close popover without applying
-  };
-
-  const applyYearFilter = () => {
-    setSelectedYear(tempSelectedYear);
-    setYearPopoverOpen(false); // Close popover after applying
-    onSearch({
-      query: searchQuery,
-      genre: selectedGenre,
-      year: tempSelectedYear,
-      minRating: minRating,
-    });
-  };
-
-  const cancelYearFilter = () => {
-    setTempSelectedYear(selectedYear); // Reset to previous selection
-    setYearPopoverOpen(false); // Close popover without applying
-  };
 
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
 
@@ -195,172 +87,18 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
       </div>
 
       {showFilters && (
-        <div
+        <FilterPanel
           ref={filtersRef}
-          className="absolute mt-2 w-full p-4 bg-[#1a1a1a] border border-[#333] rounded-md shadow-lg z-10"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Genre filter */}
-            <div>
-              <p className="text-sm font-medium text-white/70 mb-2">Genre</p>
-              <Popover open={genrePopoverOpen} onOpenChange={setGenrePopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
-                  >
-                    {selectedGenre || "Select Genre"}
-                    {selectedGenre && (
-                      <span className="ml-2 w-2 h-2 rounded-full bg-[#E50914]"></span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
-                  <Command>
-                    <CommandInput placeholder="Search genre..." className="h-9" />
-                    <CommandList className="max-h-48">
-                      <CommandEmpty>No genre found</CommandEmpty>
-                      <CommandGroup>
-                        {genres.map((genre) => (
-                          <CommandItem
-                            key={genre}
-                            onSelect={() => {
-                              setTempSelectedGenre(
-                                tempSelectedGenre === genre ? undefined : genre
-                              );
-                            }}
-                            className={`cursor-pointer ${
-                              tempSelectedGenre === genre ? "bg-[#E50914] text-white" : ""
-                            } hover:bg-[#333]`}
-                          >
-                            {genre}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                  <div className="p-2 flex justify-between border-t border-[#333]">
-                    <Button 
-                      onClick={cancelGenreFilter}
-                      variant="outline"
-                      className="bg-transparent border-[#333] text-white hover:bg-[#333]"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={applyGenreFilter}
-                      className="bg-[#E50914] text-white hover:bg-[#C30813]"
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Year filter */}
-            <div>
-              <p className="text-sm font-medium text-white/70 mb-2">Year</p>
-              <Popover open={yearPopoverOpen} onOpenChange={setYearPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
-                  >
-                    {selectedYear || "Select Year"}
-                    {selectedYear && (
-                      <span className="ml-2 w-2 h-2 rounded-full bg-[#E50914]"></span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
-                  <Command>
-                    <CommandInput placeholder="Search year..." className="h-9" />
-                    <CommandList className="max-h-48">
-                      <CommandEmpty>No year found</CommandEmpty>
-                      <CommandGroup>
-                        {years.map((year) => (
-                          <CommandItem
-                            key={year}
-                            onSelect={() => {
-                              setTempSelectedYear(
-                                tempSelectedYear === year ? undefined : year
-                              );
-                            }}
-                            className={`cursor-pointer ${
-                              tempSelectedYear === year ? "bg-[#E50914] text-white" : ""
-                            } hover:bg-[#333]`}
-                          >
-                            {year}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                  <div className="p-2 flex justify-between border-t border-[#333]">
-                    <Button 
-                      onClick={cancelYearFilter}
-                      variant="outline"
-                      className="bg-transparent border-[#333] text-white hover:bg-[#333]"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={applyYearFilter}
-                      className="bg-[#E50914] text-white hover:bg-[#C30813]"
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Rating filter */}
-            <div>
-              <p className="text-sm font-medium text-white/70 mb-2">
-                Minimum Rating
-              </p>
-              <div className="flex flex-wrap gap-1">
-                <ToggleGroup
-                  type="single"
-                  value={minRating?.toString()}
-                  onValueChange={(value) => {
-                    const newRating = value ? parseInt(value) : undefined;
-                    setMinRating(newRating);
-                    onSearch({
-                      query: searchQuery,
-                      genre: selectedGenre,
-                      year: selectedYear,
-                      minRating: newRating,
-                    });
-                  }}
-                >
-                  {ratingOptions.map((rating) => (
-                    <ToggleGroupItem
-                      key={rating}
-                      value={rating.toString()}
-                      className="w-8 h-8 bg-[#2a2a2a] border-[#333] text-white data-[state=on]:bg-[#E50914] data-[state=on]:text-white"
-                    >
-                      {rating}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </div>
-            </div>
-          </div>
-
-          {/* Reset filters button */}
-          {hasActiveFilters && (
-            <Button
-              variant="link"
-              className="mt-4 text-[#E50914] hover:text-[#ff6b78] p-0"
-              onClick={resetFilters}
-            >
-              Reset filters
-            </Button>
-          )}
-        </div>
+          selectedGenre={selectedGenre}
+          setSelectedGenre={setSelectedGenre}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          minRating={minRating}
+          setMinRating={setMinRating}
+          onSearch={onSearch}
+          searchQuery={searchQuery}
+          hasActiveFilters={hasActiveFilters}
+        />
       )}
     </div>
   );
