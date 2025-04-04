@@ -62,12 +62,13 @@ interface SearchBarProps {
 export const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedGenre, setSelectedGenre] = useState<string | undefined>(
-    undefined
-  );
-  const [selectedYear, setSelectedYear] = useState<string | undefined>(
-    undefined
-  );
+  
+  const [tempSelectedGenre, setTempSelectedGenre] = useState<string | undefined>(undefined);
+  const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
+  
+  const [tempSelectedYear, setTempSelectedYear] = useState<string | undefined>(undefined);
+  const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
+  
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const filtersRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +92,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     };
   }, [showFilters]);
 
+  // Only trigger search when searchQuery or minRating changes, genre and year will use Apply button
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       onSearch({
@@ -105,9 +107,39 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
   }, [searchQuery, selectedGenre, selectedYear, minRating, onSearch]);
 
   const resetFilters = () => {
+    setTempSelectedGenre(undefined);
     setSelectedGenre(undefined);
+    setTempSelectedYear(undefined);
     setSelectedYear(undefined);
     setMinRating(undefined);
+    
+    // Trigger search with reset filters
+    onSearch({
+      query: searchQuery,
+      genre: undefined,
+      year: undefined,
+      minRating: undefined,
+    });
+  };
+
+  const applyGenreFilter = () => {
+    setSelectedGenre(tempSelectedGenre);
+    onSearch({
+      query: searchQuery,
+      genre: tempSelectedGenre,
+      year: selectedYear,
+      minRating: minRating,
+    });
+  };
+
+  const applyYearFilter = () => {
+    setSelectedYear(tempSelectedYear);
+    onSearch({
+      query: searchQuery,
+      genre: selectedGenre,
+      year: tempSelectedYear,
+      minRating: minRating,
+    });
   };
 
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
@@ -159,7 +191,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                     variant="outline"
                     className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
                   >
-                    {selectedGenre || "Select Genre"}
+                    {tempSelectedGenre || selectedGenre || "Select Genre"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
@@ -172,12 +204,12 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                           <CommandItem
                             key={genre}
                             onSelect={() => {
-                              setSelectedGenre(
-                                selectedGenre === genre ? undefined : genre
+                              setTempSelectedGenre(
+                                tempSelectedGenre === genre ? undefined : genre
                               );
                             }}
                             className={`cursor-pointer ${
-                              selectedGenre === genre ? "bg-[#E50914] text-white" : ""
+                              tempSelectedGenre === genre ? "bg-[#E50914] text-white" : ""
                             } hover:bg-[#333]`}
                           >
                             {genre}
@@ -186,6 +218,14 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                       </CommandGroup>
                     </CommandList>
                   </Command>
+                  <div className="p-2 flex justify-end border-t border-[#333]">
+                    <Button 
+                      onClick={applyGenreFilter}
+                      className="bg-[#E50914] text-white hover:bg-[#C30813]"
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -199,7 +239,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                     variant="outline"
                     className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
                   >
-                    {selectedYear || "Select Year"}
+                    {tempSelectedYear || selectedYear || "Select Year"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
@@ -212,12 +252,12 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                           <CommandItem
                             key={year}
                             onSelect={() => {
-                              setSelectedYear(
-                                selectedYear === year ? undefined : year
+                              setTempSelectedYear(
+                                tempSelectedYear === year ? undefined : year
                               );
                             }}
                             className={`cursor-pointer ${
-                              selectedYear === year ? "bg-[#E50914] text-white" : ""
+                              tempSelectedYear === year ? "bg-[#E50914] text-white" : ""
                             } hover:bg-[#333]`}
                           >
                             {year}
@@ -226,6 +266,14 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                       </CommandGroup>
                     </CommandList>
                   </Command>
+                  <div className="p-2 flex justify-end border-t border-[#333]">
+                    <Button 
+                      onClick={applyYearFilter}
+                      className="bg-[#E50914] text-white hover:bg-[#C30813]"
+                    >
+                      Apply
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -239,9 +287,16 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
                 <ToggleGroup
                   type="single"
                   value={minRating?.toString()}
-                  onValueChange={(value) =>
-                    setMinRating(value ? parseInt(value) : undefined)
-                  }
+                  onValueChange={(value) => {
+                    const newRating = value ? parseInt(value) : undefined;
+                    setMinRating(newRating);
+                    onSearch({
+                      query: searchQuery,
+                      genre: selectedGenre,
+                      year: selectedYear,
+                      minRating: newRating,
+                    });
+                  }}
                 >
                   {ratingOptions.map((rating) => (
                     <ToggleGroupItem
