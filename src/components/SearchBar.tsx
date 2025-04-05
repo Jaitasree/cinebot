@@ -55,10 +55,10 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, selectedGenre, selectedYear, minRating, onSearch]);
 
-  // Handle recommendation toggle
+  // Handle recommendation toggle - now with watchlist dependency
   useEffect(() => {
     onRecommend(showRecommendations);
-  }, [showRecommendations, onRecommend]);
+  }, [showRecommendations, onRecommend, watchlist]);
 
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
 

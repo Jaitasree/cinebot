@@ -1,5 +1,4 @@
-
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchFilters } from "@/components/filters/types";
 import { MovieCard } from "@/components/MovieCard";
@@ -424,7 +423,6 @@ const Index = () => {
   };
 
   useEffect(() => {
-    // Load watchlist from localStorage
     const savedWatchlist = localStorage.getItem("watchlist");
     if (savedWatchlist) {
       setWatchlist(JSON.parse(savedWatchlist));
@@ -436,11 +434,9 @@ const Index = () => {
 
     let recommendations: Movie[] = [];
     
-    // Get user's preferred genres based on watchlist
     const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
     const genreTags = new Map<string, number>();
     
-    // Extract potential genres from titles and descriptions
     watchlistMovies.forEach(movie => {
       const genreWords = [
         "action", "adventure", "comedy", "drama", "horror", 
@@ -457,30 +453,25 @@ const Index = () => {
       });
     });
     
-    // Sort genre preferences by frequency
     const sortedGenres = [...genreTags.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(entry => entry[0]);
     
-    // Get movies with high ratings that match preferred genres
     if (sortedGenres.length > 0) {
       const topGenres = sortedGenres.slice(0, 3);
       
       recommendations = movies
         .filter(movie => {
-          // Don't recommend movies already in watchlist
           if (watchlist.includes(movie.id)) return false;
           
           const text = `${movie.title} ${movie.description || ""}`.toLowerCase();
           
-          // Check if movie contains any of top genres
           return topGenres.some(genre => text.includes(genre));
         })
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 12);
     }
     
-    // If we don't have enough recommendations based on genres, add highly-rated movies
     if (recommendations.length < 12) {
       const highRatedMovies = movies
         .filter(movie => !watchlist.includes(movie.id) && !recommendations.some(r => r.id === movie.id))
@@ -541,16 +532,15 @@ const Index = () => {
 
   const handleRecommendationsToggle = (enabled: boolean) => {
     setShowRecommendations(enabled);
-    // Turn off watchlist view when recommendations are enabled
     if (enabled) {
       setShowWatchlist(false);
+      generateRecommendations();
     }
   };
 
   const toggleWatchlist = () => {
     const newWatchlistState = !showWatchlist;
     setShowWatchlist(newWatchlistState);
-    // Turn off recommendations when watchlist is enabled
     if (newWatchlistState) {
       setShowRecommendations(false);
     }
@@ -578,6 +568,9 @@ const Index = () => {
         const savedWatchlist = localStorage.getItem("watchlist");
         if (savedWatchlist) {
           setWatchlist(JSON.parse(savedWatchlist));
+          if (showRecommendations) {
+            generateRecommendations();
+          }
         }
       }
     };
@@ -586,18 +579,20 @@ const Index = () => {
       const savedWatchlist = localStorage.getItem("watchlist");
       if (savedWatchlist) {
         setWatchlist(JSON.parse(savedWatchlist));
+        if (showRecommendations) {
+          generateRecommendations();
+        }
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
     window.addEventListener('watchlistUpdated', handleLocalStorageChange);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('watchlistUpdated', handleLocalStorageChange);
     };
-  }, []);
+  }, [generateRecommendations, showRecommendations]);
 
   if (!user) return null;
 
