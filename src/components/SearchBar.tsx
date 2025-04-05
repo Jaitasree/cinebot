@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FilterPanel } from "@/components/filters/FilterPanel";
 import { SearchFilters } from "@/components/filters/types";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -20,6 +21,9 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
+  
+  // Use debounced search query for better UX
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Handle outside click to close filters
   useEffect(() => {
@@ -41,21 +45,17 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
     };
   }, [showFilters]);
 
-  // Trigger search when searchQuery changes
+  // Trigger search when search parameters change
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      onSearch({
-        query: searchQuery,
-        genre: selectedGenre,
-        year: selectedYear,
-        minRating: minRating,
-      });
-    }, 500);
+    onSearch({
+      query: debouncedSearchQuery,
+      genre: selectedGenre,
+      year: selectedYear,
+      minRating: minRating,
+    });
+  }, [debouncedSearchQuery, selectedGenre, selectedYear, minRating, onSearch]);
 
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, selectedGenre, selectedYear, minRating, onSearch]);
-
-  // Handle recommendation toggle - now with watchlist dependency
+  // Handle recommendation toggle - update when watchlist changes
   useEffect(() => {
     onRecommend(showRecommendations);
   }, [showRecommendations, onRecommend, watchlist]);
@@ -72,7 +72,7 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
         <div className="relative flex-1">
           <Input
             type="search"
-            placeholder="Search movies..."
+            placeholder="Search movies or genres (e.g. 'sci-fi', 'comedy')..."
             className="search-bar pl-4 pr-10 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

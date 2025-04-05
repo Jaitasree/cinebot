@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
+
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchFilters } from "@/components/filters/types";
 import { MovieCard } from "@/components/MovieCard";
@@ -8,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark, Loader2, Sparkles } from "lucide-react";
 import { Movie } from "@/types/movie";
-import { fetchMovies, addMoviesToSupabase, fetchWatchlist, fetchMoreMovies } from "@/services/movieService";
+import { 
+  fetchMovies, 
+  addMoviesToSupabase, 
+  fetchWatchlist, 
+  fetchMoreMovies,
+  searchMoviesByGenre
+} from "@/services/movieService";
 import { deleteMoviesByTitle } from "@/services/movieService";
 
 const additionalMovies: Movie[] = [
@@ -339,10 +346,12 @@ const Index = () => {
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
   const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [syncingMovies, setSyncingMovies] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [lastSearchTerm, setLastSearchTerm] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
@@ -429,9 +438,11 @@ const Index = () => {
     }
   }, []);
 
+  // Generate recommendations based on watchlist content and recently viewed genres
   const generateRecommendations = useCallback(() => {
     if (!movies.length) return;
-
+    
+    console.log("Generating recommendations based on watchlist:", watchlist);
     let recommendations: Movie[] = [];
     
     const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
@@ -440,7 +451,7 @@ const Index = () => {
     watchlistMovies.forEach(movie => {
       const genreWords = [
         "action", "adventure", "comedy", "drama", "horror", 
-        "thriller", "romance", "sci-fi", "fantasy", "animation",
+        "thriller", "romance", "sci-fi", "science fiction", "fantasy", "animation",
         "documentary", "crime", "mystery", "family", "war"
       ];
       
@@ -453,12 +464,17 @@ const Index = () => {
       });
     });
     
+    // Add randomization factor to recommendations to avoid always showing the same movies
     const sortedGenres = [...genreTags.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(entry => entry[0]);
     
     if (sortedGenres.length > 0) {
-      const topGenres = sortedGenres.slice(0, 3);
+      // Pick 2-3 top genres but shuffle slightly to add variety
+      const shuffledGenres = [...sortedGenres].sort(() => Math.random() - 0.4);
+      const topGenres = shuffledGenres.slice(0, Math.min(3, shuffledGenres.length));
+      
+      console.log("Top genre preferences:", topGenres);
       
       recommendations = movies
         .filter(movie => {
@@ -468,19 +484,27 @@ const Index = () => {
           
           return topGenres.some(genre => text.includes(genre));
         })
+        .sort(() => (Math.random() * 0.4) - 0.2) // Add slight randomization 
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 12);
     }
     
+    // If we don't have enough recommendations based on genres, add some random highly-rated movies
     if (recommendations.length < 12) {
+      const remainingCount = 12 - recommendations.length;
       const highRatedMovies = movies
-        .filter(movie => !watchlist.includes(movie.id) && !recommendations.some(r => r.id === movie.id))
+        .filter(movie => 
+          !watchlist.includes(movie.id) && 
+          !recommendations.some(r => r.id === movie.id)
+        )
+        .sort(() => Math.random() - 0.5) // Randomize order
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-        .slice(0, 12 - recommendations.length);
+        .slice(0, remainingCount);
       
       recommendations = [...recommendations, ...highRatedMovies];
     }
     
+    console.log(`Generated ${recommendations.length} recommendations`);
     setRecommendedMovies(recommendations);
   }, [movies, watchlist]);
 
@@ -497,14 +521,56 @@ const Index = () => {
     navigate('/auth');
   };
 
-  const handleSearch = useCallback((filters: SearchFilters) => {
+  const handleSearch = useCallback(async (filters: SearchFilters) => {
     if (!movies.length) return;
     
+    setSearchLoading(true);
+    let results: Movie[] = [];
+    
+    try {
+      // If search query looks like a genre search, use the SQL function
+      const isGenreSearch = filters.query && 
+        filters.query.length > 2 && 
+        !filters.genre && 
+        !filters.year && 
+        filters.query.trim() !== lastSearchTerm;
+      
+      if (isGenreSearch) {
+        console.log("Using SQL function for genre search:", filters.query);
+        setLastSearchTerm(filters.query);
+        
+        const sqlResults = await searchMoviesByGenre(filters.query);
+        
+        if (sqlResults && sqlResults.length > 0) {
+          console.log(`Found ${sqlResults.length} movies via SQL genre search`);
+          results = sqlResults;
+        } else {
+          console.log("No SQL results, falling back to client filtering");
+          results = clientSideSearch(filters);
+        }
+      } else {
+        results = clientSideSearch(filters);
+      }
+      
+      setFilteredMovies(results);
+    } catch (error) {
+      console.error("Error during search:", error);
+      // Fall back to client-side filtering
+      const fallbackResults = clientSideSearch(filters);
+      setFilteredMovies(fallbackResults);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [movies, lastSearchTerm]);
+  
+  // Client-side search function
+  const clientSideSearch = useCallback((filters: SearchFilters): Movie[] => {
     let results = [...movies];
     
     if (filters.query?.trim()) {
       results = results.filter(movie => 
-        movie.title.toLowerCase().includes(filters.query.toLowerCase())
+        movie.title.toLowerCase().includes(filters.query.toLowerCase()) ||
+        (movie.description?.toLowerCase().includes(filters.query.toLowerCase()))
       );
     }
     
@@ -527,7 +593,7 @@ const Index = () => {
       );
     }
     
-    setFilteredMovies(results);
+    return results;
   }, [movies]);
 
   const handleRecommendationsToggle = (enabled: boolean) => {
@@ -635,14 +701,19 @@ const Index = () => {
         </header>
 
         <section>
-          <h2 className="text-2xl font-bold text-white mb-6">
-            {showWatchlist ? "My Watchlist" : showRecommendations ? "Recommended For You" : "Featured Movies"}
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+            {showWatchlist ? "My Watchlist" : showRecommendations ? (
+              <>
+                Recommended For You
+                <Sparkles className="ml-2 h-5 w-5 text-[#E50914]" />
+              </>
+            ) : "Featured Movies"}
             <span className="text-sm font-normal text-white/50 ml-2">
               {filteredMovies.length} {filteredMovies.length === 1 ? 'movie' : 'movies'}
             </span>
           </h2>
           
-          {loading ? (
+          {loading || searchLoading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>

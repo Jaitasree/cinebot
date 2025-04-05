@@ -133,7 +133,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_movies_by_genre: {
+        Args: {
+          search_term: string
+        }
+        Returns: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          rating: number | null
+          title: string
+          year: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
