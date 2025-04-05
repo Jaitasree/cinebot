@@ -12,7 +12,7 @@ interface SearchBarProps {
 
 export const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
@@ -38,7 +38,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     };
   }, [showFilters]);
 
-  // Trigger search when searchQuery or minRating changes
+  // Trigger search when searchQuery changes
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       onSearch({
@@ -103,4 +103,3 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     </div>
   );
 };
-

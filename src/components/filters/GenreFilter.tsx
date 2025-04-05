@@ -33,7 +33,7 @@ export const GenreFilter = ({
   selectedYear,
   minRating,
 }: GenreFilterProps) => {
-  const [tempSelectedGenre, setTempSelectedGenre] = useState<string | undefined>(undefined);
+  const [tempSelectedGenre, setTempSelectedGenre] = useState<string | undefined>(selectedGenre);
   const [genrePopoverOpen, setGenrePopoverOpen] = useState(false);
 
   const applyGenreFilter = () => {

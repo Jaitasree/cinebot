@@ -440,12 +440,15 @@ const Index = () => {
     }
     
     if (filters.genre) {
+      // Updated genre filtering to check both title and description
       results = results.filter(movie => 
-        movie.description?.toLowerCase().includes(filters.genre.toLowerCase())
+        (movie.title?.toLowerCase().includes(filters.genre!.toLowerCase())) || 
+        (movie.description?.toLowerCase().includes(filters.genre!.toLowerCase()))
       );
     }
     
     if (filters.year) {
+      // Ensure exact match on year
       results = results.filter(movie => 
         movie.year === filters.year
       );

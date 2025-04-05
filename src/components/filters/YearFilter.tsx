@@ -33,7 +33,7 @@ export const YearFilter = ({
   selectedGenre,
   minRating,
 }: YearFilterProps) => {
-  const [tempSelectedYear, setTempSelectedYear] = useState<string | undefined>(undefined);
+  const [tempSelectedYear, setTempSelectedYear] = useState<string | undefined>(selectedYear);
   const [yearPopoverOpen, setYearPopoverOpen] = useState(false);
 
   const applyYearFilter = () => {
