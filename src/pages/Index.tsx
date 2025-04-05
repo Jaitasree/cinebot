@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Bookmark, Loader2 } from "lucide-react";
+import { Bookmark, Loader2, Sparkles } from "lucide-react";
 import { Movie } from "@/types/movie";
 import { fetchMovies, addMoviesToSupabase, fetchWatchlist, fetchMoreMovies } from "@/services/movieService";
 import { deleteMoviesByTitle } from "@/services/movieService";
@@ -338,10 +338,12 @@ const additionalMovies: Movie[] = [
 const Index = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
+  const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncingMovies, setSyncingMovies] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
@@ -421,6 +423,82 @@ const Index = () => {
     }
   };
 
+  useEffect(() => {
+    // Load watchlist from localStorage
+    const savedWatchlist = localStorage.getItem("watchlist");
+    if (savedWatchlist) {
+      setWatchlist(JSON.parse(savedWatchlist));
+    }
+  }, []);
+
+  const generateRecommendations = useCallback(() => {
+    if (!movies.length) return;
+
+    let recommendations: Movie[] = [];
+    
+    // Get user's preferred genres based on watchlist
+    const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
+    const genreTags = new Map<string, number>();
+    
+    // Extract potential genres from titles and descriptions
+    watchlistMovies.forEach(movie => {
+      const genreWords = [
+        "action", "adventure", "comedy", "drama", "horror", 
+        "thriller", "romance", "sci-fi", "fantasy", "animation",
+        "documentary", "crime", "mystery", "family", "war"
+      ];
+      
+      const text = `${movie.title} ${movie.description || ""}`.toLowerCase();
+      
+      genreWords.forEach(genre => {
+        if (text.includes(genre)) {
+          genreTags.set(genre, (genreTags.get(genre) || 0) + 1);
+        }
+      });
+    });
+    
+    // Sort genre preferences by frequency
+    const sortedGenres = [...genreTags.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+    
+    // Get movies with high ratings that match preferred genres
+    if (sortedGenres.length > 0) {
+      const topGenres = sortedGenres.slice(0, 3);
+      
+      recommendations = movies
+        .filter(movie => {
+          // Don't recommend movies already in watchlist
+          if (watchlist.includes(movie.id)) return false;
+          
+          const text = `${movie.title} ${movie.description || ""}`.toLowerCase();
+          
+          // Check if movie contains any of top genres
+          return topGenres.some(genre => text.includes(genre));
+        })
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 12);
+    }
+    
+    // If we don't have enough recommendations based on genres, add highly-rated movies
+    if (recommendations.length < 12) {
+      const highRatedMovies = movies
+        .filter(movie => !watchlist.includes(movie.id) && !recommendations.some(r => r.id === movie.id))
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 12 - recommendations.length);
+      
+      recommendations = [...recommendations, ...highRatedMovies];
+    }
+    
+    setRecommendedMovies(recommendations);
+  }, [movies, watchlist]);
+
+  useEffect(() => {
+    if (showRecommendations) {
+      generateRecommendations();
+    }
+  }, [showRecommendations, watchlist, generateRecommendations]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("user");
@@ -440,7 +518,6 @@ const Index = () => {
     }
     
     if (filters.genre) {
-      // Updated genre filtering to check both title and description
       results = results.filter(movie => 
         (movie.title?.toLowerCase().includes(filters.genre!.toLowerCase())) || 
         (movie.description?.toLowerCase().includes(filters.genre!.toLowerCase()))
@@ -448,7 +525,6 @@ const Index = () => {
     }
     
     if (filters.year) {
-      // Ensure exact match on year
       results = results.filter(movie => 
         movie.year === filters.year
       );
@@ -463,18 +539,38 @@ const Index = () => {
     setFilteredMovies(results);
   }, [movies]);
 
+  const handleRecommendationsToggle = (enabled: boolean) => {
+    setShowRecommendations(enabled);
+    // Turn off watchlist view when recommendations are enabled
+    if (enabled) {
+      setShowWatchlist(false);
+    }
+  };
+
   const toggleWatchlist = () => {
-    setShowWatchlist(!showWatchlist);
+    const newWatchlistState = !showWatchlist;
+    setShowWatchlist(newWatchlistState);
+    // Turn off recommendations when watchlist is enabled
+    if (newWatchlistState) {
+      setShowRecommendations(false);
+    }
   };
 
   useEffect(() => {
     if (showWatchlist) {
       const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
       setFilteredMovies(watchlistMovies);
+    } else if (showRecommendations) {
+      setFilteredMovies(recommendedMovies);
     } else {
-      setFilteredMovies(movies);
+      handleSearch({
+        query: "",
+        genre: undefined,
+        year: undefined,
+        minRating: undefined
+      });
     }
-  }, [showWatchlist, watchlist, movies]);
+  }, [showWatchlist, showRecommendations, watchlist, movies, recommendedMovies, handleSearch]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -536,12 +632,16 @@ const Index = () => {
               </Button>
             </div>
           </div>
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar 
+            onSearch={handleSearch} 
+            onRecommend={handleRecommendationsToggle}
+            watchlist={watchlist}
+          />
         </header>
 
         <section>
           <h2 className="text-2xl font-bold text-white mb-6">
-            {showWatchlist ? "My Watchlist" : "Featured Movies"}
+            {showWatchlist ? "My Watchlist" : showRecommendations ? "Recommended For You" : "Featured Movies"}
             <span className="text-sm font-normal text-white/50 ml-2">
               {filteredMovies.length} {filteredMovies.length === 1 ? 'movie' : 'movies'}
             </span>
@@ -557,6 +657,8 @@ const Index = () => {
                 <div className="text-center py-16 text-white/70">
                   {showWatchlist 
                     ? "Your watchlist is empty. Add some movies to watch later!"
+                    : showRecommendations
+                    ? "Start adding movies to your watchlist to get personalized recommendations!"
                     : "No movies found matching your search."}
                 </div>
               ) : (

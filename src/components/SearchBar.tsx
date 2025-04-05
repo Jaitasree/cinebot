@@ -1,5 +1,5 @@
 
-import { Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,17 @@ import { SearchFilters } from "@/components/filters/types";
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
+  onRecommend: (enabled: boolean) => void;
+  watchlist: string[];
 }
 
-export const SearchBar = ({ onSearch }: SearchBarProps) => {
+export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
 
   // Handle outside click to close filters
@@ -52,7 +55,16 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, selectedGenre, selectedYear, minRating, onSearch]);
 
+  // Handle recommendation toggle
+  useEffect(() => {
+    onRecommend(showRecommendations);
+  }, [showRecommendations, onRecommend]);
+
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
+
+  const toggleRecommendations = () => {
+    setShowRecommendations(!showRecommendations);
+  };
 
   return (
     <div className="relative w-full max-w-xl">
@@ -71,7 +83,20 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
         <Button
           variant="outline"
           className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
-            hasActiveFilters ? "border-[#E50914]" : ""
+            showRecommendations ? "border-[#E50914]" : ""
+          }`}
+          onClick={toggleRecommendations}
+          title="Show recommendations"
+        >
+          <Sparkles
+            className={`w-5 h-5 ${showRecommendations ? "text-[#E50914]" : "text-white/60"}`}
+          />
+        </Button>
+
+        <Button
+          variant="outline"
+          className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
+            !!hasActiveFilters ? "border-[#E50914]" : ""
           }`}
           onClick={() => setShowFilters(!showFilters)}
         >
