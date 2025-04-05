@@ -97,7 +97,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
           setMinRating={setMinRating}
           onSearch={onSearch}
           searchQuery={searchQuery}
-          hasActiveFilters={hasActiveFilters}
+          hasActiveFilters={!!hasActiveFilters}
         />
       )}
     </div>
