@@ -67,4 +67,24 @@
   .search-bar {
     @apply w-full max-w-xl bg-white/5 backdrop-blur-lg border border-white/10 rounded-full px-6 py-3 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300;
   }
+
+  /* Add custom background pattern */
+  .cinema-pattern-bg {
+    background-image: url('/lovable-uploads/a8007589-5470-467b-940a-7c45859b8d35.png');
+    background-repeat: repeat;
+    background-size: 500px;
+    position: relative;
+  }
+  
+  /* Add overlay to improve contrast with the background */
+  .cinema-pattern-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(20, 20, 20, 0.85);
+    z-index: -1;
+  }
 }

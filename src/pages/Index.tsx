@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchFilters } from "@/components/filters/types";
@@ -134,7 +133,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1015",
     title: "The Silence of the Lambs",
-    image_url: "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZmMGMwMTU4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZkNWIyODZiXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "1991",
     description: "A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer, a madman who skins his victims.",
     rating: 8.6
@@ -198,7 +197,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1023",
     title: "Spirited Away",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWE5ZWItZDBhYWQ0NTcxNWRhXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWEzMjUtY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
     year: "2001",
     description: "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, and where humans are changed into beasts.",
     rating: 8.6
@@ -222,7 +221,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1026",
     title: "Gladiator",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODEtN2U3NzIxMGVkZTA1L2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00ZmVlLTg2NmItM2JlNzU5ZTBiNzM4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "2000",
     description: "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
     rating: 8.5
@@ -438,7 +437,6 @@ const Index = () => {
     }
   }, []);
 
-  // Generate recommendations based on watchlist content and recently viewed genres
   const generateRecommendations = useCallback(() => {
     if (!movies.length) return;
     
@@ -464,13 +462,11 @@ const Index = () => {
       });
     });
     
-    // Add randomization factor to recommendations to avoid always showing the same movies
     const sortedGenres = [...genreTags.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(entry => entry[0]);
     
     if (sortedGenres.length > 0) {
-      // Pick 2-3 top genres but shuffle slightly to add variety
       const shuffledGenres = [...sortedGenres].sort(() => Math.random() - 0.4);
       const topGenres = shuffledGenres.slice(0, Math.min(3, shuffledGenres.length));
       
@@ -484,12 +480,11 @@ const Index = () => {
           
           return topGenres.some(genre => text.includes(genre));
         })
-        .sort(() => (Math.random() * 0.4) - 0.2) // Add slight randomization 
+        .sort(() => (Math.random() * 0.4) - 0.2)
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 12);
     }
     
-    // If we don't have enough recommendations based on genres, add some random highly-rated movies
     if (recommendations.length < 12) {
       const remainingCount = 12 - recommendations.length;
       const highRatedMovies = movies
@@ -497,7 +492,7 @@ const Index = () => {
           !watchlist.includes(movie.id) && 
           !recommendations.some(r => r.id === movie.id)
         )
-        .sort(() => Math.random() - 0.5) // Randomize order
+        .sort(() => Math.random() - 0.5)
         .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, remainingCount);
       
@@ -528,7 +523,6 @@ const Index = () => {
     let results: Movie[] = [];
     
     try {
-      // If search query looks like a genre search, use the SQL function
       const isGenreSearch = filters.query && 
         filters.query.length > 2 && 
         !filters.genre && 
@@ -555,7 +549,6 @@ const Index = () => {
       setFilteredMovies(results);
     } catch (error) {
       console.error("Error during search:", error);
-      // Fall back to client-side filtering
       const fallbackResults = clientSideSearch(filters);
       setFilteredMovies(fallbackResults);
     } finally {
@@ -563,7 +556,6 @@ const Index = () => {
     }
   }, [movies, lastSearchTerm]);
   
-  // Client-side search function
   const clientSideSearch = useCallback((filters: SearchFilters): Movie[] => {
     let results = [...movies];
     
@@ -663,8 +655,8 @@ const Index = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#141414] px-6 py-8">
-      <div className="max-w-7xl mx-auto space-y-12">
+    <div className="min-h-screen cinema-pattern-bg px-6 py-8">
+      <div className="max-w-7xl mx-auto space-y-12 relative z-10">
         <header className="flex flex-col items-center gap-8">
           <div className="w-full flex justify-between items-center">
             <h1 className="text-4xl font-bold text-white">
