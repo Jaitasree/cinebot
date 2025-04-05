@@ -1,5 +1,7 @@
+
 import { useEffect, useState, useCallback } from "react";
-import { SearchBar, SearchFilters } from "@/components/SearchBar";
+import { SearchBar } from "@/components/SearchBar";
+import { SearchFilters } from "@/components/filters/types";
 import { MovieCard } from "@/components/MovieCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";

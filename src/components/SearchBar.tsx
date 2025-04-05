@@ -103,3 +103,4 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
     </div>
   );
 };
+
