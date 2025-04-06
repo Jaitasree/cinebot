@@ -101,3 +101,25 @@
   pointer-events: none;
   z-index: 1;
 }
+
+/* Command component styling for dark theme */
+.command-dark {
+  @apply bg-[#1a1a1a] text-white border-[#333];
+}
+
+.command-dark .cm-input {
+  @apply bg-[#1a1a1a] text-white placeholder:text-white/60;
+}
+
+.command-dark .cm-item {
+  @apply text-white hover:bg-[#333] hover:text-white;
+}
+
+.command-dark .cm-item[aria-selected="true"] {
+  @apply bg-[#E50914] text-white;
+}
+
+.command-dark .cm-empty {
+  @apply text-white/60;
+}
+

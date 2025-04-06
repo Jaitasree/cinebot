@@ -68,10 +68,10 @@ export const YearFilter = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
-          <Command>
+          <Command className="command-dark">
             <CommandInput placeholder="Search year..." className="h-9" />
             <CommandList className="max-h-48">
-              <CommandEmpty>No year found</CommandEmpty>
+              <CommandEmpty className="text-white/60">No year found</CommandEmpty>
               <CommandGroup>
                 {years.map((year) => (
                   <CommandItem
