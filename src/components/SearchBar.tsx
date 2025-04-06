@@ -77,13 +77,13 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
         <div className="relative flex-1">
           <Input
             type="search"
-            placeholder="Search movies or genres (e.g. 'sci-fi', 'comedy')..."
-            className={`search-bar pl-4 pr-10 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0 ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+            placeholder="Search movies or genres..."
+            className={`search-bar pl-10 pr-4 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0 ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             disabled={disabled}
           />
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
         </div>
 
         <Button
@@ -92,7 +92,7 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
             isRecommending ? "border-[#E50914]" : ""
           }`}
           onClick={toggleRecommendations}
-          title="Show recommendations"
+          title="Get personalized recommendations based on your watchlist"
         >
           <Sparkles
             className={`w-5 h-5 ${isRecommending ? "text-[#E50914]" : "text-white/60"}`}
