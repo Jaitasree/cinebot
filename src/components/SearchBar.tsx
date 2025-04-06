@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FilterPanel } from "@/components/filters/FilterPanel";
 import { SearchFilters } from "@/components/filters/types";
 import { useDebounce } from "@/hooks/useDebounce";
+import { toastService } from "@/services/toastService";
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -61,7 +62,19 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
 
   const toggleRecommendations = () => {
-    onRecommend(!isRecommending);
+    const action = !isRecommending;
+    onRecommend(action);
+    
+    // Show toast notification based on the action
+    if (action) {
+      if (watchlist.length === 0) {
+        toastService.info("Add movies to your watchlist to get better recommendations", "Recommendations Enabled");
+      } else {
+        toastService.success(`Showing personalized recommendations based on ${watchlist.length} watchlisted movies`, "Recommendations Enabled");
+      }
+    } else {
+      toastService.info("Showing all movies", "Recommendations Disabled");
+    }
   };
 
   // Reset filters when disabled
@@ -104,7 +117,19 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
           className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
             !!hasActiveFilters ? "border-[#E50914]" : ""
           } ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
-          onClick={() => !disabled && setShowFilters(!showFilters)}
+          onClick={() => {
+            if (!disabled) {
+              const newState = !showFilters;
+              setShowFilters(newState);
+              if (newState && hasActiveFilters) {
+                toastService.info(`${Object.entries({genre: selectedGenre, year: selectedYear, rating: minRating})
+                  .filter(([_, value]) => value !== undefined)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join(', ')}`, 
+                  "Active Filters");
+              }
+            }
+          }}
           disabled={disabled}
         >
           <Filter

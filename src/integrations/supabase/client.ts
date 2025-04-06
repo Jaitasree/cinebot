@@ -20,5 +20,7 @@ export const supabase = createClient<Database>(
     global: {
       fetch: fetch.bind(globalThis),
     },
+    // Add debug console logs to help troubleshoot API calls
+    debug: import.meta.env.DEV,
   }
 );
