@@ -19,8 +19,7 @@ export const supabase = createClient<Database>(
     },
     global: {
       fetch: fetch.bind(globalThis),
-    },
-    // Add debug console logs to help troubleshoot API calls
-    debug: import.meta.env.DEV,
+    }
+    // Removed debug property as it's not supported in the type definition
   }
 );
