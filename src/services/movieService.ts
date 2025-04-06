@@ -34,7 +34,7 @@ export async function fetchMovies(): Promise<Movie[]> {
     // Ensure all movies have a rating value, default to 0 if null
     const movies = data.map(movie => ({
       ...movie,
-      rating: movie.rating ?? 0 // Use nullish coalescing instead of logical OR
+      rating: movie.rating || 0
     }));
     
     // Store in local storage as a backup
@@ -47,27 +47,6 @@ export async function fetchMovies(): Promise<Movie[]> {
     const localMovies = getLocalMovies();
     console.log(`Retrieved ${localMovies.length} movies from local storage after error`);
     return localMovies;
-  }
-}
-
-// Search movies by genre using SQL function
-export async function searchMoviesByGenre(searchTerm: string): Promise<Movie[]> {
-  try {
-    console.log(`Searching movies with term: ${searchTerm}`);
-    // Fix the type issue by properly defining the return type
-    const { data, error } = await supabase
-      .rpc('search_movies_by_genre', { search_term: searchTerm });
-
-    if (error) {
-      console.error('Error searching movies by genre:', error);
-      return [];
-    }
-
-    // Ensure the returned data matches the Movie type
-    return (data as Movie[]) || [];
-  } catch (error) {
-    console.error("Error in genre search:", error);
-    return [];
   }
 }
 
@@ -118,11 +97,9 @@ export async function addMoviesToSupabase(movies: Movie[]): Promise<void> {
       
       console.log(`Processing batch ${Math.floor(i / batchSize) + 1} with ${batch.length} movies`);
       
-      // Cast as any to bypass the type checking issue temporarily
-      // This is necessary because the Supabase TypeScript types don't perfectly match our usage
       const { error } = await supabase
         .from('movies')
-        .upsert(batch as any, { 
+        .upsert(batch, { 
           onConflict: 'id',
           ignoreDuplicates: false
         });
@@ -159,7 +136,7 @@ export async function syncWatchlist(movieIds: string[]): Promise<void> {
   const { error: deleteError } = await supabase
     .from('watchlist')
     .delete()
-    .eq('user_id', user.id as any);
+    .eq('user_id', user.id);
   
   if (deleteError) {
     console.error('Error clearing watchlist:', deleteError);
@@ -176,10 +153,9 @@ export async function syncWatchlist(movieIds: string[]): Promise<void> {
     movie_id: movieId,
   }));
   
-  // Cast as any to bypass the type checking issue
   const { error: insertError } = await supabase
     .from('watchlist')
-    .insert(watchlistEntries as any);
+    .insert(watchlistEntries);
   
   if (insertError) {
     console.error('Error updating watchlist:', insertError);
@@ -197,15 +173,14 @@ export async function fetchWatchlist(): Promise<string[]> {
   const { data, error } = await supabase
     .from('watchlist')
     .select('movie_id')
-    .eq('user_id', user.id as any);
+    .eq('user_id', user.id);
   
   if (error) {
     console.error('Error fetching watchlist:', error);
     throw error;
   }
   
-  // Properly handle the data structure by checking if data exists first
-  return data ? data.map(item => item.movie_id as string) : [];
+  return (data || []).map(item => item.movie_id);
 }
 
 // Function to delete movies by title

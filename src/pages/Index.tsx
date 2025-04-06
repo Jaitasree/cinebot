@@ -1,21 +1,13 @@
-
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { SearchBar } from "@/components/SearchBar";
-import { SearchFilters } from "@/components/filters/types";
+import { useEffect, useState, useCallback } from "react";
+import { SearchBar, SearchFilters } from "@/components/SearchBar";
 import { MovieCard } from "@/components/MovieCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Bookmark, Loader2, Sparkles } from "lucide-react";
+import { Bookmark, Loader2 } from "lucide-react";
 import { Movie } from "@/types/movie";
-import { 
-  fetchMovies, 
-  addMoviesToSupabase, 
-  fetchWatchlist, 
-  fetchMoreMovies,
-  searchMoviesByGenre
-} from "@/services/movieService";
+import { fetchMovies, addMoviesToSupabase, fetchWatchlist, fetchMoreMovies } from "@/services/movieService";
 import { deleteMoviesByTitle } from "@/services/movieService";
 
 const additionalMovies: Movie[] = [
@@ -134,7 +126,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1015",
     title: "The Silence of the Lambs",
-    image_url: "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZkNWIyODZiXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1MmEtYzM1M2ZmMGMwMTU4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "1991",
     description: "A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer, a madman who skins his victims.",
     rating: 8.6
@@ -198,7 +190,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1023",
     title: "Spirited Away",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWEzMjUtY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWE5ZWItZDBhYWQ0NTcxNWRhXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg",
     year: "2001",
     description: "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, and where humans are changed into beasts.",
     rating: 8.6
@@ -222,7 +214,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1026",
     title: "Gladiator",
-    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00ZmVlLTg2NmItM2JlNzU5ZTBiNzM4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODEtN2U3NzIxMGVkZTA1L2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "2000",
     description: "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
     rating: 8.5
@@ -254,7 +246,7 @@ const additionalMovies: Movie[] = [
   {
     id: "movie-1030",
     title: "Modern Times",
-    image_url: "https://m.media-amazon.com/images/M/MV5BYjJiZjMzYzktNjU0NS00OTkxLWEwYzItYzdhYWJjN2QzMTRlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_.jpg",
+    image_url: "https://m.media-amazon.com/images/M/MV5BYjJiZjMzYzktNjU0NS00OTkxLWEwYzItYzdhYWJjN2QzMTRlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_.jpg",
     year: "1936",
     description: "The Tramp struggles to live in modern industrial society with the help of a young homeless woman.",
     rating: 8.5
@@ -344,16 +336,10 @@ const additionalMovies: Movie[] = [
 const Index = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
-  const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [syncingMovies, setSyncingMovies] = useState(false);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [showWatchlist, setShowWatchlist] = useState(false);
-  const [showRecommendations, setShowRecommendations] = useState(false);
-  const [lastSearchTerm, setLastSearchTerm] = useState("");
-  const [isGeneratingRecommendations, setIsGeneratingRecommendations] = useState(false);
-  const [activeView, setActiveView] = useState<'all' | 'watchlist' | 'recommendations'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
@@ -433,123 +419,6 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    const savedWatchlist = localStorage.getItem("watchlist");
-    if (savedWatchlist) {
-      setWatchlist(JSON.parse(savedWatchlist));
-    }
-  }, []);
-
-  const generateRecommendations = useCallback(() => {
-    if (!movies.length) return;
-    
-    setIsGeneratingRecommendations(true);
-    console.log("Generating recommendations based on watchlist:", watchlist);
-    
-    try {
-      let recommendations: Movie[] = [];
-      
-      const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
-      
-      // If watchlist is empty, just return top rated movies
-      if (watchlistMovies.length === 0) {
-        recommendations = [...movies]
-          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 12);
-        
-        console.log(`Generated ${recommendations.length} recommendations based on top ratings`);
-        setRecommendedMovies(recommendations);
-        
-        if (activeView === 'recommendations') {
-          setFilteredMovies(recommendations);
-        }
-        
-        setIsGeneratingRecommendations(false);
-        return;
-      }
-      
-      const genreTags = new Map<string, number>();
-      
-      watchlistMovies.forEach(movie => {
-        const genreWords = [
-          "action", "adventure", "comedy", "drama", "horror", 
-          "thriller", "romance", "sci-fi", "science fiction", "fantasy", "animation",
-          "documentary", "crime", "mystery", "family", "war"
-        ];
-        
-        const text = `${movie.title} ${movie.description || ""}`.toLowerCase();
-        
-        genreWords.forEach(genre => {
-          if (text.includes(genre)) {
-            genreTags.set(genre, (genreTags.get(genre) || 0) + 1);
-          }
-        });
-      });
-      
-      const sortedGenres = [...genreTags.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .map(entry => entry[0]);
-      
-      if (sortedGenres.length > 0) {
-        const shuffledGenres = [...sortedGenres].sort(() => Math.random() - 0.4);
-        const topGenres = shuffledGenres.slice(0, Math.min(3, shuffledGenres.length));
-        
-        console.log("Top genre preferences:", topGenres);
-        
-        const preferredMovies = movies
-          .filter(movie => {
-            if (watchlist.includes(movie.id)) return false;
-            
-            const text = `${movie.title} ${movie.description || ""}`.toLowerCase();
-            
-            return topGenres.some(genre => text.includes(genre));
-          })
-          .sort(() => (Math.random() * 0.4) - 0.2)
-          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 12);
-          
-        recommendations = [...preferredMovies];
-      }
-      
-      if (recommendations.length < 12) {
-        const remainingCount = 12 - recommendations.length;
-        const highRatedMovies = movies
-          .filter(movie => 
-            !watchlist.includes(movie.id) && 
-            !recommendations.some(r => r.id === movie.id)
-          )
-          .sort(() => Math.random() - 0.5)
-          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, remainingCount);
-        
-        recommendations = [...recommendations, ...highRatedMovies];
-      }
-      
-      console.log(`Generated ${recommendations.length} recommendations`);
-      setRecommendedMovies(recommendations);
-      
-      if (activeView === 'recommendations') {
-        setFilteredMovies(recommendations);
-      }
-    } catch (error) {
-      console.error("Error generating recommendations:", error);
-    } finally {
-      setIsGeneratingRecommendations(false);
-    }
-  }, [movies, watchlist, activeView]);
-
-  useEffect(() => {
-    if (activeView === 'recommendations' && !isGeneratingRecommendations && movies.length > 0) {
-      generateRecommendations();
-    }
-  }, [activeView, generateRecommendations, isGeneratingRecommendations, movies.length]);
-
-  useEffect(() => {
-    if (watchlist.length > 0 && movies.length > 0 && !isGeneratingRecommendations) {
-      generateRecommendations();
-    }
-  }, [watchlist, generateRecommendations, movies, isGeneratingRecommendations]);
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("user");
@@ -557,65 +426,20 @@ const Index = () => {
     navigate('/auth');
   };
 
-  const handleSearch = useCallback(async (filters: SearchFilters) => {
+  const handleSearch = useCallback((filters: SearchFilters) => {
     if (!movies.length) return;
     
-    // Don't search if we're in recommendations or watchlist view
-    if (activeView !== 'all') {
-      return;
-    }
-    
-    setSearchLoading(true);
-    let results: Movie[] = [];
-    
-    try {
-      const isGenreSearch = filters.query && 
-        filters.query.length > 2 && 
-        !filters.genre && 
-        !filters.year && 
-        filters.query.trim() !== lastSearchTerm;
-      
-      if (isGenreSearch) {
-        console.log("Using SQL function for genre search:", filters.query);
-        setLastSearchTerm(filters.query);
-        
-        const sqlResults = await searchMoviesByGenre(filters.query);
-        
-        if (sqlResults && sqlResults.length > 0) {
-          console.log(`Found ${sqlResults.length} movies via SQL genre search`);
-          results = sqlResults;
-        } else {
-          console.log("No SQL results, falling back to client filtering");
-          results = clientSideSearch(filters);
-        }
-      } else {
-        results = clientSideSearch(filters);
-      }
-      
-      setFilteredMovies(results);
-    } catch (error) {
-      console.error("Error during search:", error);
-      const fallbackResults = clientSideSearch(filters);
-      setFilteredMovies(fallbackResults);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [movies, lastSearchTerm, activeView]);
-  
-  const clientSideSearch = useCallback((filters: SearchFilters): Movie[] => {
     let results = [...movies];
     
     if (filters.query?.trim()) {
       results = results.filter(movie => 
-        movie.title.toLowerCase().includes(filters.query.toLowerCase()) ||
-        (movie.description?.toLowerCase().includes(filters.query.toLowerCase()))
+        movie.title.toLowerCase().includes(filters.query.toLowerCase())
       );
     }
     
     if (filters.genre) {
       results = results.filter(movie => 
-        (movie.title?.toLowerCase().includes(filters.genre!.toLowerCase())) || 
-        (movie.description?.toLowerCase().includes(filters.genre!.toLowerCase()))
+        movie.description?.toLowerCase().includes(filters.genre.toLowerCase())
       );
     }
     
@@ -631,119 +455,54 @@ const Index = () => {
       );
     }
     
-    return results;
+    setFilteredMovies(results);
   }, [movies]);
 
-  const handleRecommendationsToggle = (enabled: boolean) => {
-    if (enabled === showRecommendations) return;
-    
-    setShowRecommendations(enabled);
-    setActiveView(enabled ? 'recommendations' : 'all');
-    
-    if (enabled) {
-      setShowWatchlist(false);
-      setSearchLoading(true);
-      
-      // Small timeout to allow UI to update before processing
-      setTimeout(() => {
-        if (recommendedMovies.length > 0) {
-          setFilteredMovies(recommendedMovies);
-        } else {
-          setFilteredMovies([]);
-          generateRecommendations();
-        }
-        setSearchLoading(false);
-      }, 50);
-    } else {
-      // Return to all movies view
-      handleSearch({
-        query: "",
-        genre: undefined,
-        year: undefined,
-        minRating: undefined
-      });
-    }
+  const toggleWatchlist = () => {
+    setShowWatchlist(!showWatchlist);
   };
 
-  const toggleWatchlist = () => {
-    const newWatchlistState = !showWatchlist;
-    setShowWatchlist(newWatchlistState);
-    setActiveView(newWatchlistState ? 'watchlist' : 'all');
-    
-    if (newWatchlistState) {
-      setShowRecommendations(false);
-      setSearchLoading(true);
-      
-      // Small timeout to allow UI to update before processing
-      setTimeout(() => {
-        const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
-        setFilteredMovies(watchlistMovies);
-        setSearchLoading(false);
-      }, 50);
+  useEffect(() => {
+    if (showWatchlist) {
+      const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
+      setFilteredMovies(watchlistMovies);
     } else {
-      // Return to all movies view
-      handleSearch({
-        query: "",
-        genre: undefined,
-        year: undefined,
-        minRating: undefined
-      });
+      setFilteredMovies(movies);
     }
-  };
+  }, [showWatchlist, watchlist, movies]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "watchlist") {
-        try {
-          const savedWatchlist = localStorage.getItem("watchlist");
-          if (savedWatchlist) {
-            const newWatchlist = JSON.parse(savedWatchlist);
-            setWatchlist(newWatchlist);
-            
-            // Update current view if needed
-            if (showWatchlist) {
-              const watchlistMovies = movies.filter(movie => newWatchlist.includes(movie.id));
-              setFilteredMovies(watchlistMovies);
-            }
-          }
-        } catch (error) {
-          console.error("Error handling storage change:", error);
+        const savedWatchlist = localStorage.getItem("watchlist");
+        if (savedWatchlist) {
+          setWatchlist(JSON.parse(savedWatchlist));
         }
       }
     };
 
     const handleLocalStorageChange = () => {
-      try {
-        const savedWatchlist = localStorage.getItem("watchlist");
-        if (savedWatchlist) {
-          const newWatchlist = JSON.parse(savedWatchlist);
-          setWatchlist(newWatchlist);
-          
-          // Update current view if needed
-          if (showWatchlist) {
-            const watchlistMovies = movies.filter(movie => newWatchlist.includes(movie.id));
-            setFilteredMovies(watchlistMovies);
-          }
-        }
-      } catch (error) {
-        console.error("Error handling local storage change:", error);
+      const savedWatchlist = localStorage.getItem("watchlist");
+      if (savedWatchlist) {
+        setWatchlist(JSON.parse(savedWatchlist));
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
+    
     window.addEventListener('watchlistUpdated', handleLocalStorageChange);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('watchlistUpdated', handleLocalStorageChange);
     };
-  }, [showWatchlist, movies]);
+  }, []);
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen cinema-pattern-bg px-6 py-8">
-      <div className="max-w-7xl mx-auto space-y-12 relative z-10">
+    <div className="min-h-screen bg-[#141414] px-6 py-8">
+      <div className="max-w-7xl mx-auto space-y-12">
         <header className="flex flex-col items-center gap-8">
           <div className="w-full flex justify-between items-center">
             <h1 className="text-4xl font-bold text-white">
@@ -772,29 +531,18 @@ const Index = () => {
               </Button>
             </div>
           </div>
-          <SearchBar 
-            onSearch={handleSearch} 
-            onRecommend={handleRecommendationsToggle}
-            watchlist={watchlist}
-            disabled={activeView !== 'all'}
-            isRecommending={showRecommendations}
-          />
+          <SearchBar onSearch={handleSearch} />
         </header>
 
         <section>
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-            {showWatchlist ? "My Watchlist" : showRecommendations ? (
-              <>
-                Recommended For You
-                <Sparkles className="ml-2 h-5 w-5 text-[#E50914]" />
-              </>
-            ) : "Featured Movies"}
+          <h2 className="text-2xl font-bold text-white mb-6">
+            {showWatchlist ? "My Watchlist" : "Featured Movies"}
             <span className="text-sm font-normal text-white/50 ml-2">
               {filteredMovies.length} {filteredMovies.length === 1 ? 'movie' : 'movies'}
             </span>
           </h2>
           
-          {loading || searchLoading || (showRecommendations && isGeneratingRecommendations) ? (
+          {loading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>
@@ -804,8 +552,6 @@ const Index = () => {
                 <div className="text-center py-16 text-white/70">
                   {showWatchlist 
                     ? "Your watchlist is empty. Add some movies to watch later!"
-                    : showRecommendations
-                    ? "Start adding movies to your watchlist to get personalized recommendations!"
                     : "No movies found matching your search."}
                 </div>
               ) : (

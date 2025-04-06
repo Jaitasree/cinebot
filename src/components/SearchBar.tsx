@@ -1,31 +1,75 @@
 
-import { Search, Filter, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { FilterPanel } from "@/components/filters/FilterPanel";
-import { SearchFilters } from "@/components/filters/types";
-import { useDebounce } from "@/hooks/useDebounce";
-import { toastService } from "@/services/toastService";
+
+export interface SearchFilters {
+  query: string;
+  genre?: string;
+  year?: string;
+  minRating?: number;
+}
+
+export const genres = [
+  "Action",
+  "Adventure",
+  "Animation",
+  "Biography",
+  "Comedy",
+  "Crime",
+  "Documentary",
+  "Drama",
+  "Fantasy",
+  "History",
+  "Horror",
+  "Mystery",
+  "Romance",
+  "Sci-Fi",
+  "Thriller",
+  "War",
+  "Western",
+];
+
+// Generate year options from 1930 to current year
+const currentYear = new Date().getFullYear();
+export const years = Array.from(
+  { length: currentYear - 1929 },
+  (_, i) => `${currentYear - i}`
+);
+
+export const ratingOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
-  onRecommend: (enabled: boolean) => void;
-  watchlist: string[];
-  disabled?: boolean;
-  isRecommending?: boolean;
 }
 
-export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = false, isRecommending = false }: SearchBarProps) => {
+export const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
-  const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState<string | undefined>(
+    undefined
+  );
+  const [selectedYear, setSelectedYear] = useState<string | undefined>(
+    undefined
+  );
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const filtersRef = useRef<HTMLDivElement>(null);
-  
-  // Use debounced search query for better UX
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Handle outside click to close filters
   useEffect(() => {
@@ -47,42 +91,26 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
     };
   }, [showFilters]);
 
-  // Trigger search when search parameters change
   useEffect(() => {
-    if (!disabled) {
+    const debounceTimer = setTimeout(() => {
       onSearch({
-        query: debouncedSearchQuery,
+        query: searchQuery,
         genre: selectedGenre,
         year: selectedYear,
         minRating: minRating,
       });
-    }
-  }, [debouncedSearchQuery, selectedGenre, selectedYear, minRating, onSearch, disabled]);
+    }, 500);
 
-  const hasActiveFilters = selectedGenre || selectedYear || minRating;
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, selectedGenre, selectedYear, minRating, onSearch]);
 
-  const toggleRecommendations = () => {
-    const action = !isRecommending;
-    onRecommend(action);
-    
-    // Show toast notification based on the action
-    if (action) {
-      if (watchlist.length === 0) {
-        toastService.info("Add movies to your watchlist to get better recommendations", "Recommendations Enabled");
-      } else {
-        toastService.success(`Showing personalized recommendations based on ${watchlist.length} watchlisted movies`, "Recommendations Enabled");
-      }
-    } else {
-      toastService.info("Showing all movies", "Recommendations Disabled");
-    }
+  const resetFilters = () => {
+    setSelectedGenre(undefined);
+    setSelectedYear(undefined);
+    setMinRating(undefined);
   };
 
-  // Reset filters when disabled
-  useEffect(() => {
-    if (disabled) {
-      setShowFilters(false);
-    }
-  }, [disabled]);
+  const hasActiveFilters = selectedGenre || selectedYear || minRating;
 
   return (
     <div className="relative w-full max-w-xl">
@@ -90,47 +118,20 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
         <div className="relative flex-1">
           <Input
             type="search"
-            placeholder="Search movies or genres..."
-            className={`search-bar pl-10 pr-4 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0 ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+            placeholder="Search movies..."
+            className="search-bar pl-4 pr-10 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            disabled={disabled}
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
+          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
         </div>
 
         <Button
           variant="outline"
           className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
-            isRecommending ? "border-[#E50914]" : ""
+            hasActiveFilters ? "border-[#E50914]" : ""
           }`}
-          onClick={toggleRecommendations}
-          title="Get personalized recommendations based on your watchlist"
-        >
-          <Sparkles
-            className={`w-5 h-5 ${isRecommending ? "text-[#E50914]" : "text-white/60"}`}
-          />
-        </Button>
-
-        <Button
-          variant="outline"
-          className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
-            !!hasActiveFilters ? "border-[#E50914]" : ""
-          } ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
-          onClick={() => {
-            if (!disabled) {
-              const newState = !showFilters;
-              setShowFilters(newState);
-              if (newState && hasActiveFilters) {
-                toastService.info(`${Object.entries({genre: selectedGenre, year: selectedYear, rating: minRating})
-                  .filter(([_, value]) => value !== undefined)
-                  .map(([key, value]) => `${key}: ${value}`)
-                  .join(', ')}`, 
-                  "Active Filters");
-              }
-            }
-          }}
-          disabled={disabled}
+          onClick={() => setShowFilters(!showFilters)}
         >
           <Filter
             className={`w-5 h-5 ${hasActiveFilters ? "text-[#E50914]" : "text-white/60"}`}
@@ -143,20 +144,131 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = fa
         </Button>
       </div>
 
-      {showFilters && !disabled && (
-        <FilterPanel
+      {showFilters && (
+        <div
           ref={filtersRef}
-          selectedGenre={selectedGenre}
-          setSelectedGenre={setSelectedGenre}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          minRating={minRating}
-          setMinRating={setMinRating}
-          onSearch={onSearch}
-          searchQuery={searchQuery}
-          hasActiveFilters={!!hasActiveFilters}
-        />
+          className="absolute mt-2 w-full p-4 bg-[#1a1a1a] border border-[#333] rounded-md shadow-lg z-10"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Genre filter */}
+            <div>
+              <p className="text-sm font-medium text-white/70 mb-2">Genre</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
+                  >
+                    {selectedGenre || "Select Genre"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
+                  <Command>
+                    <CommandInput placeholder="Search genre..." className="h-9" />
+                    <CommandList className="max-h-48">
+                      <CommandEmpty>No genre found</CommandEmpty>
+                      <CommandGroup>
+                        {genres.map((genre) => (
+                          <CommandItem
+                            key={genre}
+                            onSelect={() => {
+                              setSelectedGenre(
+                                selectedGenre === genre ? undefined : genre
+                              );
+                            }}
+                            className={`cursor-pointer ${
+                              selectedGenre === genre ? "bg-[#E50914] text-white" : ""
+                            } hover:bg-[#333]`}
+                          >
+                            {genre}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Year filter */}
+            <div>
+              <p className="text-sm font-medium text-white/70 mb-2">Year</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start bg-[#2a2a2a] border-[#333] text-white hover:bg-[#333]"
+                  >
+                    {selectedYear || "Select Year"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
+                  <Command>
+                    <CommandInput placeholder="Search year..." className="h-9" />
+                    <CommandList className="max-h-48">
+                      <CommandEmpty>No year found</CommandEmpty>
+                      <CommandGroup>
+                        {years.map((year) => (
+                          <CommandItem
+                            key={year}
+                            onSelect={() => {
+                              setSelectedYear(
+                                selectedYear === year ? undefined : year
+                              );
+                            }}
+                            className={`cursor-pointer ${
+                              selectedYear === year ? "bg-[#E50914] text-white" : ""
+                            } hover:bg-[#333]`}
+                          >
+                            {year}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Rating filter */}
+            <div>
+              <p className="text-sm font-medium text-white/70 mb-2">
+                Minimum Rating
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <ToggleGroup
+                  type="single"
+                  value={minRating?.toString()}
+                  onValueChange={(value) =>
+                    setMinRating(value ? parseInt(value) : undefined)
+                  }
+                >
+                  {ratingOptions.map((rating) => (
+                    <ToggleGroupItem
+                      key={rating}
+                      value={rating.toString()}
+                      className="w-8 h-8 bg-[#2a2a2a] border-[#333] text-white data-[state=on]:bg-[#E50914] data-[state=on]:text-white"
+                    >
+                      {rating}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
+            </div>
+          </div>
+
+          {/* Reset filters button */}
+          {hasActiveFilters && (
+            <Button
+              variant="link"
+              className="mt-4 text-[#E50914] hover:text-[#ff6b78] p-0"
+              onClick={resetFilters}
+            >
+              Reset filters
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
-}
+};

@@ -19,7 +19,6 @@ export const supabase = createClient<Database>(
     },
     global: {
       fetch: fetch.bind(globalThis),
-    }
-    // Removed debug property as it's not supported in the type definition
+    },
   }
 );
