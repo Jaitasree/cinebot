@@ -11,15 +11,16 @@ interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
   onRecommend: (enabled: boolean) => void;
   watchlist: string[];
+  disabled?: boolean;
+  isRecommending?: boolean;
 }
 
-export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarProps) => {
+export const SearchBar = ({ onSearch, onRecommend, watchlist = [], disabled = false, isRecommending = false }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
-  const [showRecommendations, setShowRecommendations] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   
   // Use debounced search query for better UX
@@ -47,24 +48,28 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
 
   // Trigger search when search parameters change
   useEffect(() => {
-    onSearch({
-      query: debouncedSearchQuery,
-      genre: selectedGenre,
-      year: selectedYear,
-      minRating: minRating,
-    });
-  }, [debouncedSearchQuery, selectedGenre, selectedYear, minRating, onSearch]);
-
-  // Handle recommendation toggle - update when watchlist changes
-  useEffect(() => {
-    onRecommend(showRecommendations);
-  }, [showRecommendations, onRecommend, watchlist]);
+    if (!disabled) {
+      onSearch({
+        query: debouncedSearchQuery,
+        genre: selectedGenre,
+        year: selectedYear,
+        minRating: minRating,
+      });
+    }
+  }, [debouncedSearchQuery, selectedGenre, selectedYear, minRating, onSearch, disabled]);
 
   const hasActiveFilters = selectedGenre || selectedYear || minRating;
 
   const toggleRecommendations = () => {
-    setShowRecommendations(!showRecommendations);
+    onRecommend(!isRecommending);
   };
+
+  // Reset filters when disabled
+  useEffect(() => {
+    if (disabled) {
+      setShowFilters(false);
+    }
+  }, [disabled]);
 
   return (
     <div className="relative w-full max-w-xl">
@@ -73,9 +78,10 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
           <Input
             type="search"
             placeholder="Search movies or genres (e.g. 'sci-fi', 'comedy')..."
-            className="search-bar pl-4 pr-10 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0"
+            className={`search-bar pl-4 pr-10 py-6 bg-[#1a1a1a] border-[#333] text-white placeholder:text-white/60 focus-visible:ring-[#E50914] focus-visible:ring-offset-0 ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={disabled}
           />
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
         </div>
@@ -83,13 +89,13 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
         <Button
           variant="outline"
           className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
-            showRecommendations ? "border-[#E50914]" : ""
+            isRecommending ? "border-[#E50914]" : ""
           }`}
           onClick={toggleRecommendations}
           title="Show recommendations"
         >
           <Sparkles
-            className={`w-5 h-5 ${showRecommendations ? "text-[#E50914]" : "text-white/60"}`}
+            className={`w-5 h-5 ${isRecommending ? "text-[#E50914]" : "text-white/60"}`}
           />
         </Button>
 
@@ -97,8 +103,9 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
           variant="outline"
           className={`flex items-center gap-2 px-4 py-6 bg-[#1a1a1a] border-[#333] text-white hover:bg-[#2a2a2a] ${
             !!hasActiveFilters ? "border-[#E50914]" : ""
-          }`}
-          onClick={() => setShowFilters(!showFilters)}
+          } ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+          onClick={() => !disabled && setShowFilters(!showFilters)}
+          disabled={disabled}
         >
           <Filter
             className={`w-5 h-5 ${hasActiveFilters ? "text-[#E50914]" : "text-white/60"}`}
@@ -111,7 +118,7 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
         </Button>
       </div>
 
-      {showFilters && (
+      {showFilters && !disabled && (
         <FilterPanel
           ref={filtersRef}
           selectedGenre={selectedGenre}
@@ -127,4 +134,4 @@ export const SearchBar = ({ onSearch, onRecommend, watchlist = [] }: SearchBarPr
       )}
     </div>
   );
-};
+}

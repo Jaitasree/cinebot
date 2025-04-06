@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { SearchFilters } from "@/components/filters/types";
@@ -352,6 +353,7 @@ const Index = () => {
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [lastSearchTerm, setLastSearchTerm] = useState("");
   const [isGeneratingRecommendations, setIsGeneratingRecommendations] = useState(false);
+  const [activeView, setActiveView] = useState<'all' | 'watchlist' | 'recommendations'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState(null);
@@ -439,7 +441,7 @@ const Index = () => {
   }, []);
 
   const generateRecommendations = useCallback(() => {
-    if (!movies.length || isGeneratingRecommendations) return;
+    if (!movies.length) return;
     
     setIsGeneratingRecommendations(true);
     console.log("Generating recommendations based on watchlist:", watchlist);
@@ -448,6 +450,24 @@ const Index = () => {
       let recommendations: Movie[] = [];
       
       const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
+      
+      // If watchlist is empty, just return top rated movies
+      if (watchlistMovies.length === 0) {
+        recommendations = [...movies]
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 12);
+        
+        console.log(`Generated ${recommendations.length} recommendations based on top ratings`);
+        setRecommendedMovies(recommendations);
+        
+        if (activeView === 'recommendations') {
+          setFilteredMovies(recommendations);
+        }
+        
+        setIsGeneratingRecommendations(false);
+        return;
+      }
+      
       const genreTags = new Map<string, number>();
       
       watchlistMovies.forEach(movie => {
@@ -506,23 +526,29 @@ const Index = () => {
       }
       
       console.log(`Generated ${recommendations.length} recommendations`);
-      setRecommendedMovies([...recommendations]);
+      setRecommendedMovies(recommendations);
       
-      if (showRecommendations) {
-        setFilteredMovies([...recommendations]);
+      if (activeView === 'recommendations') {
+        setFilteredMovies(recommendations);
       }
     } catch (error) {
       console.error("Error generating recommendations:", error);
     } finally {
       setIsGeneratingRecommendations(false);
     }
-  }, [movies, watchlist, showRecommendations, isGeneratingRecommendations]);
+  }, [movies, watchlist, activeView]);
 
   useEffect(() => {
-    if (showRecommendations && !isGeneratingRecommendations) {
+    if (activeView === 'recommendations' && !isGeneratingRecommendations && movies.length > 0) {
       generateRecommendations();
     }
-  }, [showRecommendations, generateRecommendations, isGeneratingRecommendations]);
+  }, [activeView, generateRecommendations, isGeneratingRecommendations, movies.length]);
+
+  useEffect(() => {
+    if (watchlist.length > 0 && movies.length > 0 && !isGeneratingRecommendations) {
+      generateRecommendations();
+    }
+  }, [watchlist, generateRecommendations, movies, isGeneratingRecommendations]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -533,6 +559,11 @@ const Index = () => {
 
   const handleSearch = useCallback(async (filters: SearchFilters) => {
     if (!movies.length) return;
+    
+    // Don't search if we're in recommendations or watchlist view
+    if (activeView !== 'all') {
+      return;
+    }
     
     setSearchLoading(true);
     let results: Movie[] = [];
@@ -569,7 +600,7 @@ const Index = () => {
     } finally {
       setSearchLoading(false);
     }
-  }, [movies, lastSearchTerm]);
+  }, [movies, lastSearchTerm, activeView]);
   
   const clientSideSearch = useCallback((filters: SearchFilters): Movie[] => {
     let results = [...movies];
@@ -604,29 +635,27 @@ const Index = () => {
   }, [movies]);
 
   const handleRecommendationsToggle = (enabled: boolean) => {
+    if (enabled === showRecommendations) return;
+    
     setShowRecommendations(enabled);
+    setActiveView(enabled ? 'recommendations' : 'all');
+    
     if (enabled) {
       setShowWatchlist(false);
-      setFilteredMovies([]);
-      generateRecommendations();
-    }
-  };
-
-  const toggleWatchlist = () => {
-    const newWatchlistState = !showWatchlist;
-    setShowWatchlist(newWatchlistState);
-    if (newWatchlistState) {
-      setShowRecommendations(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showWatchlist) {
-      const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
-      setFilteredMovies(watchlistMovies);
-    } else if (showRecommendations) {
-      setFilteredMovies(recommendedMovies);
+      setSearchLoading(true);
+      
+      // Small timeout to allow UI to update before processing
+      setTimeout(() => {
+        if (recommendedMovies.length > 0) {
+          setFilteredMovies(recommendedMovies);
+        } else {
+          setFilteredMovies([]);
+          generateRecommendations();
+        }
+        setSearchLoading(false);
+      }, 50);
     } else {
+      // Return to all movies view
       handleSearch({
         query: "",
         genre: undefined,
@@ -634,7 +663,33 @@ const Index = () => {
         minRating: undefined
       });
     }
-  }, [showWatchlist, showRecommendations, watchlist, movies, recommendedMovies, handleSearch]);
+  };
+
+  const toggleWatchlist = () => {
+    const newWatchlistState = !showWatchlist;
+    setShowWatchlist(newWatchlistState);
+    setActiveView(newWatchlistState ? 'watchlist' : 'all');
+    
+    if (newWatchlistState) {
+      setShowRecommendations(false);
+      setSearchLoading(true);
+      
+      // Small timeout to allow UI to update before processing
+      setTimeout(() => {
+        const watchlistMovies = movies.filter(movie => watchlist.includes(movie.id));
+        setFilteredMovies(watchlistMovies);
+        setSearchLoading(false);
+      }, 50);
+    } else {
+      // Return to all movies view
+      handleSearch({
+        query: "",
+        genre: undefined,
+        year: undefined,
+        minRating: undefined
+      });
+    }
+  };
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -642,9 +697,13 @@ const Index = () => {
         try {
           const savedWatchlist = localStorage.getItem("watchlist");
           if (savedWatchlist) {
-            setWatchlist(JSON.parse(savedWatchlist));
-            if (showRecommendations) {
-              generateRecommendations();
+            const newWatchlist = JSON.parse(savedWatchlist);
+            setWatchlist(newWatchlist);
+            
+            // Update current view if needed
+            if (showWatchlist) {
+              const watchlistMovies = movies.filter(movie => newWatchlist.includes(movie.id));
+              setFilteredMovies(watchlistMovies);
             }
           }
         } catch (error) {
@@ -657,9 +716,13 @@ const Index = () => {
       try {
         const savedWatchlist = localStorage.getItem("watchlist");
         if (savedWatchlist) {
-          setWatchlist(JSON.parse(savedWatchlist));
-          if (showRecommendations) {
-            generateRecommendations();
+          const newWatchlist = JSON.parse(savedWatchlist);
+          setWatchlist(newWatchlist);
+          
+          // Update current view if needed
+          if (showWatchlist) {
+            const watchlistMovies = movies.filter(movie => newWatchlist.includes(movie.id));
+            setFilteredMovies(watchlistMovies);
           }
         }
       } catch (error) {
@@ -674,7 +737,7 @@ const Index = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('watchlistUpdated', handleLocalStorageChange);
     };
-  }, [generateRecommendations, showRecommendations]);
+  }, [showWatchlist, movies]);
 
   if (!user) return null;
 
@@ -713,6 +776,8 @@ const Index = () => {
             onSearch={handleSearch} 
             onRecommend={handleRecommendationsToggle}
             watchlist={watchlist}
+            disabled={activeView !== 'all'}
+            isRecommending={showRecommendations}
           />
         </header>
 
