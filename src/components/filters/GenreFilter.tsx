@@ -67,11 +67,11 @@ export const GenreFilter = ({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
+        <PopoverContent className="p-0 bg-black border-[#333] text-white">
           <Command className="command-dark">
             <CommandInput placeholder="Search genre..." className="h-9" />
             <CommandList className="max-h-48">
-              <CommandEmpty className="text-white/60">No genre found</CommandEmpty>
+              <CommandEmpty className="text-white">No genre found</CommandEmpty>
               <CommandGroup>
                 {genres.map((genre) => (
                   <CommandItem
@@ -82,8 +82,8 @@ export const GenreFilter = ({
                       );
                     }}
                     className={`cursor-pointer ${
-                      tempSelectedGenre === genre ? "bg-[#E50914] text-white" : ""
-                    } hover:bg-[#333]`}
+                      tempSelectedGenre === genre ? "bg-[#333] text-white" : ""
+                    }`}
                   >
                     {genre}
                   </CommandItem>
