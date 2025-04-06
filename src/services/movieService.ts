@@ -50,6 +50,27 @@ export async function fetchMovies(): Promise<Movie[]> {
   }
 }
 
+// Search movies by genre using SQL function
+export async function searchMoviesByGenre(searchTerm: string): Promise<Movie[]> {
+  try {
+    console.log(`Searching movies with term: ${searchTerm}`);
+    // Fix the type issue by properly defining the return type
+    const { data, error } = await supabase
+      .rpc('search_movies_by_genre', { search_term: searchTerm });
+
+    if (error) {
+      console.error('Error searching movies by genre:', error);
+      return [];
+    }
+
+    // Ensure the returned data matches the Movie type
+    return data as Movie[] || [];
+  } catch (error) {
+    console.error("Error in genre search:", error);
+    return [];
+  }
+}
+
 // Get movies from local storage
 function getLocalMovies(): Movie[] {
   try {
