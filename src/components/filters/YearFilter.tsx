@@ -67,12 +67,12 @@ export const YearFilter = ({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 bg-[#2a2a2a] border-[#333] text-white">
-          <Command>
-            <CommandInput placeholder="Search year..." className="h-9" />
+        <PopoverContent className="p-0 bg-black border-[#333] text-white">
+          <Command className="bg-black text-white">
+            <CommandInput placeholder="Search year..." className="h-9 text-white bg-black" />
             <CommandList className="max-h-48">
-              <CommandEmpty>No year found</CommandEmpty>
-              <CommandGroup>
+              <CommandEmpty className="text-white">No year found</CommandEmpty>
+              <CommandGroup className="bg-black text-white">
                 {years.map((year) => (
                   <CommandItem
                     key={year}
@@ -81,9 +81,9 @@ export const YearFilter = ({
                         tempSelectedYear === year ? undefined : year
                       );
                     }}
-                    className={`cursor-pointer ${
+                    className={`cursor-pointer text-white bg-black ${
                       tempSelectedYear === year ? "bg-[#E50914] text-white" : ""
-                    } hover:bg-[#333]`}
+                    }`}
                   >
                     {year}
                   </CommandItem>

@@ -101,3 +101,43 @@
   pointer-events: none;
   z-index: 1;
 }
+
+/* Custom styles for dropdown components */
+[cmdk-root] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+[cmdk-input] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+[cmdk-item] {
+  background-color: #000000 !important; 
+  color: #FFFFFF !important;
+}
+
+[cmdk-item][data-selected="true"] {
+  background-color: #E50914 !important;
+  color: #FFFFFF !important;
+}
+
+[cmdk-group] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+[cmdk-empty] {
+  color: #FFFFFF !important;
+}
+
+[cmdk-list] {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+.popover-content {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
