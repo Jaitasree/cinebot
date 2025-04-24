@@ -753,7 +753,7 @@ const Index = () => {
               <Button 
                 variant="outline"
                 onClick={toggleWatchlist}
-                className={`bg-transparent border-white/20 text-white hover:bg-white/10 ${showWatchlist ? 'bg-white/20' : ''}`}
+                className={`bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white ${showWatchlist ? 'bg-white/20' : ''}`}
               >
                 <Bookmark className="mr-2 h-4 w-4" />
                 My Watchlist
@@ -766,7 +766,7 @@ const Index = () => {
               <Button 
                 variant="outline"
                 onClick={handleSignOut}
-                className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white"
               >
                 Sign Out
               </Button>
